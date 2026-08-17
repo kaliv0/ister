@@ -6,115 +6,171 @@ import (
 	"testing"
 )
 
-func eq[T comparable](t *testing.T, got, want []T) {
-	t.Helper()
-	if !slices.Equal(got, want) {
-		t.Fatalf("got %v, want %v", got, want)
-	}
-}
-
 func TestNew(t *testing.T) {
-	if New[int]().Len() != 0 {
-		t.Fatal("new list should be empty")
-	}
+	eqList(t, New[int](), []int{})
 }
 
 func TestOf(t *testing.T) {
-	eq(t, Of(1, 2, 3).ToSlice(), []int{1, 2, 3})
-	if Of[int]().Len() != 0 {
-		t.Fatal("Of() with no args should be empty")
-	}
+	eqList(t, Of(1, 2, 3), []int{1, 2, 3})
+	eqList(t, Of[int](), []int{})
+}
+
+func TestOfCopies(t *testing.T) {
+	src := make([]int, 3, 8)
+	copy(src, []int{1, 2, 3})
+	l := Of(src...)
+	l.Add(4)
+	eqVal(t, src[:cap(src)][3], 0)
+	eqList(t, l, []int{1, 2, 3, 4})
 }
 
 func TestFromSlice(t *testing.T) {
-	src := []int{1, 2, 3}
-	l := FromSlice(src)
-	eq(t, l.ToSlice(), []int{1, 2, 3})
-
-	// mutation shouldn't change original
-	src[0] = 99
-	eq(t, l.ToSlice(), []int{1, 2, 3})
-}
-
-func TestFromSliceEmpty(t *testing.T) {
-	got := FromSlice([]int(nil)).ToSlice()
-	if got == nil || len(got) != 0 {
-		t.Fatalf("got %#v, want non-nil empty slice", got)
-	}
+	t.Run("src mutation", func(t *testing.T) {
+		src := []int{1, 2, 3}
+		l := FromSlice(src)
+		src[0] = 99
+		eqList(t, l, []int{1, 2, 3})
+		eq(t, src, []int{99, 2, 3})
+	})
+	t.Run("list mutation", func(t *testing.T) {
+		src := []int{1, 2, 3}
+		l := FromSlice(src)
+		l.Set(1, 20)
+		eqVal(t, src[1], 2)
+		eqVal(t, l.Get(1), 20)
+	})
 }
 
 func TestAdd(t *testing.T) {
-	l := New[int]()
-	l.Add(1)
-	l.Add(2, 3)
-	eq(t, l.ToSlice(), []int{1, 2, 3})
-	if l.Len() == 0 {
-		t.Fatal("Len should be non-zero after Add")
-	}
+	t.Run("values", func(t *testing.T) {
+		l := New[int]()
+		l.Add(1)
+		l.Add(2, 3)
+		eqList(t, l, []int{1, 2, 3})
+	})
+	t.Run("no values", func(t *testing.T) {
+		l := Of(1, 2)
+		l.Add()
+		eqList(t, l, []int{1, 2})
+	})
 }
 
 func TestInsert(t *testing.T) {
-	l := Of(1, 3)
-	l.Insert(1, 2)
-	eq(t, l.ToSlice(), []int{1, 2, 3})
-
-	l.Insert(l.Len(), 4)
-	eq(t, l.ToSlice(), []int{1, 2, 3, 4})
-
-	l.Insert(2, 20, 30, 40)
-	eq(t, l.ToSlice(), []int{1, 2, 20, 30, 40, 3, 4})
+	cases := []struct {
+		name  string
+		start []int
+		i     int
+		vals  []int
+		want  []int
+	}{
+		{"middle", []int{1, 3}, 1, []int{2}, []int{1, 2, 3}},
+		{"append", []int{1, 2, 3}, 3, []int{4}, []int{1, 2, 3, 4}},
+		{"multiple", []int{1, 2, 3, 4}, 2, []int{20, 30, 40}, []int{1, 2, 20, 30, 40, 3, 4}},
+		{"front", []int{1, 2, 3}, 0, []int{0}, []int{0, 1, 2, 3}},
+		{"no values", []int{1, 2, 3}, 1, nil, []int{1, 2, 3}},
+		{"into empty", nil, 0, []int{7}, []int{7}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			l := Of(tc.start...)
+			l.Insert(tc.i, tc.vals...)
+			eqList(t, l, tc.want)
+		})
+	}
 }
 
 func TestGet(t *testing.T) {
-	if Of(10, 20, 30).Get(1) != 20 {
-		t.Fatal("Get(1) should be 20")
-	}
+	l := Of(10, 20, 30)
+	eqVal(t, l.Get(0), 10)
+	eqVal(t, l.Get(1), 20)
+	eqVal(t, l.Get(2), 30)
 }
 
 func TestSet(t *testing.T) {
 	l := Of(1, 2, 3)
+	l.Set(0, 10)
 	l.Set(1, 20)
-	eq(t, l.ToSlice(), []int{1, 20, 3})
+	l.Set(2, 30)
+	eqList(t, l, []int{10, 20, 30})
 }
 
 func TestRemoveAt(t *testing.T) {
-	l := Of(1, 2, 3)
-	if l.RemoveAt(1) != 2 {
-		t.Fatal("RemoveAt should return 2")
+	cases := []struct {
+		name    string
+		start   []int
+		i       int
+		wantVal int
+		want    []int
+	}{
+		{"middle", []int{1, 2, 3}, 1, 2, []int{1, 3}},
+		{"first", []int{1, 2, 3}, 0, 1, []int{2, 3}},
+		{"last", []int{1, 2, 3}, 2, 3, []int{1, 2}},
+		{"only", []int{1}, 0, 1, []int{}},
 	}
-	eq(t, l.ToSlice(), []int{1, 3})
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			l := Of(tc.start...)
+			eqVal(t, l.RemoveAt(tc.i), tc.wantVal)
+			eqList(t, l, tc.want)
+		})
+	}
 }
 
 func TestClear(t *testing.T) {
-	l := Of(1, 2)
+	l := Of(1, 2, 3, 4, 5)
+	capBefore := cap(l.items)
 	l.Clear()
-	if l.Len() != 0 {
-		t.Fatal("expected empty")
+	eqList(t, l, []int{})
+	if cap(l.items) != capBefore {
+		t.Fatalf("Clear should keep capacity: got %d, want %d", cap(l.items), capBefore)
 	}
 
 	l.Add(3)
-	eq(t, l.ToSlice(), []int{3})
+	eqList(t, l, []int{3})
+}
+
+func TestClearZeros(t *testing.T) {
+	a, b := 1, 2
+	l := Of(&a, &b)
+	old := l.items
+	l.Clear()
+	eq(t, old, []*int{nil, nil})
 }
 
 func TestAll(t *testing.T) {
-	var idxs, vals []int
-	for i, v := range Of(1, 2, 3).All() {
-		idxs = append(idxs, i)
-		vals = append(vals, v)
-	}
-	eq(t, idxs, []int{0, 1, 2})
-	eq(t, vals, []int{1, 2, 3})
-
-	idxs, vals = nil, nil
-	for i, v := range Of(1, 2, 3).All() {
-		idxs = append(idxs, i)
-		vals = append(vals, v)
-		if v == 2 {
-			break
+	t.Run("values", func(t *testing.T) {
+		var vals []int
+		for v := range Of(1, 2, 3).All() {
+			vals = append(vals, v)
 		}
-	}
-	eq(t, idxs, []int{0, 1})
-	eq(t, vals, []int{1, 2})
+		eq(t, vals, []int{1, 2, 3})
+	})
+	t.Run("early break", func(t *testing.T) {
+		var vals []int
+		for v := range Of(1, 2, 3).All() {
+			vals = append(vals, v)
+			if v == 2 {
+				break
+			}
+		}
+		eq(t, vals, []int{1, 2})
+	})
+	t.Run("empty", func(t *testing.T) {
+		for range New[int]().All() {
+			t.Fatal("empty list should not yield")
+		}
+	})
+	t.Run("live view", func(t *testing.T) {
+		l := Of(1, 2, 3)
+		var vals []int
+		for v := range l.All() {
+			vals = append(vals, v)
+			if v == 1 {
+				l.Set(2, 99)
+			}
+		}
+		eq(t, vals, []int{1, 2, 99})
+	})
 }
 
 func TestToSlice(t *testing.T) {
@@ -122,67 +178,125 @@ func TestToSlice(t *testing.T) {
 	a := l.ToSlice()
 	eq(t, a, []int{1, 2, 3})
 
-	// mutating doesn't affect the original
 	a[0] = 99
-	eq(t, a, []int{99, 2, 3})
 	eq(t, l.ToSlice(), []int{1, 2, 3})
 }
 
 func TestToSliceEmpty(t *testing.T) {
-	for _, got := range [][]int{New[int]().ToSlice(), Of[int]().ToSlice()} {
-		if got == nil || len(got) != 0 {
-			t.Fatalf("got %#v, want non-nil empty slice", got)
-		}
+	cleared := Of(1, 2)
+	cleared.Clear()
+	cases := []struct {
+		name string
+		got  []int
+	}{
+		{"New", New[int]().ToSlice()},
+		{"Of", Of[int]().ToSlice()},
+		{"FromSlice nil", FromSlice([]int(nil)).ToSlice()},
+		{"after Clear", cleared.ToSlice()},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			nonNilEmpty(t, tc.got)
+		})
 	}
 }
 
 func TestRemove(t *testing.T) {
-	l := Of("a", "b", "b")
-	if !Remove(l, "b") {
-		t.Fatal("expected a match")
+	cases := []struct {
+		name  string
+		start []string
+		val   string
+		ok    bool
+		want  []string
+	}{
+		{"first match", []string{"a", "b", "b"}, "b", true, []string{"a", "b"}},
+		{"missing", []string{"a", "b"}, "z", false, []string{"a", "b"}},
+		{"first", []string{"a", "b", "c"}, "a", true, []string{"b", "c"}},
+		{"last", []string{"a", "b", "c"}, "c", true, []string{"a", "b"}},
+		{"only", []string{"x"}, "x", true, []string{}},
 	}
-	eq(t, l.ToSlice(), []string{"a", "b"})
-
-	if Remove(l, "z") {
-		t.Fatal("missing value should return false")
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			l := Of(tc.start...)
+			eqVal(t, Remove(l, tc.val), tc.ok)
+			eqList(t, l, tc.want)
+		})
 	}
-	eq(t, l.ToSlice(), []string{"a", "b"})
 }
 
 func TestIndex(t *testing.T) {
-	l := Of(1, 2, 3)
-	if Index(l, 2) != 1 || Index(l, 9) != -1 {
-		t.Fatal("Index: want 1 for 2, -1 for missing")
+	cases := []struct {
+		name string
+		l    *List[int]
+		val  int
+		want int
+	}{
+		{"found", Of(1, 2, 3), 2, 1},
+		{"missing", Of(1, 2, 3), 9, -1},
+		{"empty", New[int](), 1, -1},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			eqVal(t, Index(tc.l, tc.val), tc.want)
+		})
 	}
 }
 
 func TestContains(t *testing.T) {
-	l := Of(1, 2, 3)
-	if !Contains(l, 2) || Contains(l, 9) {
-		t.Fatal("Contains: want true for 2, false for 9")
+	cases := []struct {
+		name string
+		l    *List[int]
+		val  int
+		want bool
+	}{
+		{"found", Of(1, 2, 3), 2, true},
+		{"missing", Of(1, 2, 3), 9, false},
+		{"empty", New[int](), 1, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			eqVal(t, Contains(tc.l, tc.val), tc.want)
+		})
 	}
 }
 
 func TestReverse(t *testing.T) {
-	l := Of(1, 2, 3)
-	l.Reverse()
-	eq(t, l.ToSlice(), []int{3, 2, 1})
-
-	l2 := Of("a", "b", "c")
-	l2.Reverse()
-	eq(t, l2.ToSlice(), []string{"c", "b", "a"})
+	cases := []struct {
+		name  string
+		start []int
+		want  []int
+	}{
+		{"three", []int{1, 2, 3}, []int{3, 2, 1}},
+		{"empty", nil, []int{}},
+		{"single", []int{1}, []int{1}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			l := Of(tc.start...)
+			l.Reverse()
+			eqList(t, l, tc.want)
+		})
+	}
 }
 
 func TestSort(t *testing.T) {
-	l := Of(3, 1, 2)
-	Sort(l)
-	eq(t, l.ToSlice(), []int{1, 2, 3})
-}
-
-func TestAddEmpty(t *testing.T) {
-	l := Of(1, 2)
-	l.Add()
-	eq(t, l.ToSlice(), []int{1, 2})
+	cases := []struct {
+		name  string
+		start []int
+		want  []int
+	}{
+		{"unsorted", []int{3, 1, 2}, []int{1, 2, 3}},
+		{"empty", nil, []int{}},
+		{"already sorted", []int{1, 2, 3}, []int{1, 2, 3}},
+		{"duplicates", []int{2, 1, 2, 1}, []int{1, 1, 2, 2}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			l := Of(tc.start...)
+			Sort(l)
+			eqList(t, l, tc.want)
+		})
+	}
 }
 
 func TestString(t *testing.T) {
@@ -192,27 +306,66 @@ func TestString(t *testing.T) {
 		want string
 	}{
 		{"ints", Of(1, 2, 3).String(), "[1, 2, 3]"},
-		{"empty New", New[int]().String(), "[]"},
-		{"empty Of", Of[int]().String(), "[]"},
+		{"empty", New[int]().String(), "[]"},
 		{"stringer", Of(ident(1), ident(2)).String(), "[id=1, id=2]"},
 	}
 	for _, tc := range cases {
-		if tc.got != tc.want {
-			t.Fatalf("%s: got %q, want %q", tc.name, tc.got, tc.want)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			eqVal(t, tc.got, tc.want)
+		})
 	}
 }
 
 func TestOutOfRangePanics(t *testing.T) {
 	l := Of(1)
-	mustPanic(t, func() { l.Get(-1) })
-	mustPanic(t, func() { l.Get(10) })
-	mustPanic(t, func() { l.Set(-1, 0) })
-	mustPanic(t, func() { l.Set(10, 0) })
-	mustPanic(t, func() { l.Insert(-1, 0) })
-	mustPanic(t, func() { l.Insert(10, 0) })
-	mustPanic(t, func() { l.RemoveAt(-1) })
-	mustPanic(t, func() { l.RemoveAt(10) })
+	empty := New[int]()
+	cases := []struct {
+		name string
+		fn   func()
+	}{
+		{"Get negative", func() { l.Get(-1) }},
+		{"Get past end", func() { l.Get(10) }},
+		{"Set negative", func() { l.Set(-1, 0) }},
+		{"Set past end", func() { l.Set(10, 0) }},
+		{"Insert negative", func() { l.Insert(-1, 0) }},
+		{"Insert past end", func() { l.Insert(10, 0) }},
+		{"RemoveAt negative", func() { l.RemoveAt(-1) }},
+		{"RemoveAt past end", func() { l.RemoveAt(10) }},
+		{"Get empty", func() { empty.Get(0) }},
+		{"Set empty", func() { empty.Set(0, 1) }},
+		{"RemoveAt empty", func() { empty.RemoveAt(0) }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			mustPanic(t, tc.fn)
+		})
+	}
+}
+
+func eq[T comparable](t *testing.T, got, want []T) {
+	t.Helper()
+	if !slices.Equal(got, want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+}
+
+func eqList[T comparable](t *testing.T, l *List[T], want []T) {
+	t.Helper()
+	eq(t, l.items, want)
+}
+
+func eqVal[T comparable](t *testing.T, got, want T) {
+	t.Helper()
+	if got != want {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+}
+
+func nonNilEmpty[T any](t *testing.T, got []T) {
+	t.Helper()
+	if got == nil || len(got) != 0 {
+		t.Fatalf("got %#v, want non-nil empty slice", got)
+	}
 }
 
 func mustPanic(t *testing.T, fn func()) {
@@ -225,7 +378,6 @@ func mustPanic(t *testing.T, fn func()) {
 	fn()
 }
 
-// ident helper
 type ident int
 
 func (id ident) String() string {

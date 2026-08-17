@@ -13,7 +13,7 @@ func main() {
 	l.RemoveAt(1)
 	fmt.Println(l.Get(0))
 
-	for _, el := range l.All() {
+	for el := range l.All() {
 		fmt.Printf("%d ", el)
 	}
 	fmt.Println()

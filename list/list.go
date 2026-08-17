@@ -14,12 +14,12 @@ type List[T any] struct {
 
 // Empty list. Zero-capacity backing slice; first Add allocates.
 func New[T any]() *List[T] {
-	return &List[T]{items: make([]T, 0)}
+	return &List[T]{items: []T{}}
 }
 
 // List from the given values, in order. Of[T]() with no args is empty.
 func Of[T any](vals ...T) *List[T] {
-	return &List[T]{items: vals}
+	return &List[T]{items: slices.Clone(vals)}
 }
 
 // List from a slice. Copy `s` so later mutations of the original slice do not affect the list. `FromSlice(nil)` is empty.
@@ -60,6 +60,7 @@ func (l *List[T]) RemoveAt(i int) T {
 
 // Drop all elements. Keep backing capacity so later `Add`s can reuse it.
 func (l *List[T]) Clear() {
+	clear(l.items)
 	l.items = l.items[:0]
 }
 
@@ -70,26 +71,22 @@ func (l *List[T]) Reverse() {
 
 // Copy of the current elements. Caller can mutate the result without affecting the list.
 func (l *List[T]) ToSlice() []T {
-	if l.items == nil {
-		return make([]T, 0)
+	if len(l.items) == 0 {
+		return []T{}
 	}
 	return slices.Clone(l.items)
 }
 
 // Yield elements from front to back. Use with `for range`. Early `break` stops iteration (`yield` must return `false` and stop).
-func (l *List[T]) All() iter.Seq2[int, T] {
-	return slices.All(l.items)
+func (l *List[T]) All() iter.Seq[T] {
+	return slices.Values(l.items)
 }
 
 // Return string representation of list items
 func (l *List[T]) String() string {
 	vals := make([]string, 0, len(l.items))
 	for _, v := range l.items {
-		if stringer, ok := any(v).(fmt.Stringer); ok {
-			vals = append(vals, stringer.String())
-		} else {
-			vals = append(vals, fmt.Sprintf("%v", v))
-		}
+		vals = append(vals, fmt.Sprintf("%v", v))
 	}
 	return "[" + strings.Join(vals, ", ") + "]"
 }
