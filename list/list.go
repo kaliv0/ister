@@ -13,17 +13,17 @@ type List[T any] struct {
 }
 
 // Empty list. Zero-capacity backing slice; first Add allocates.
-func New[T any]() *List[T] {
+func NewList[T any]() *List[T] {
 	return &List[T]{items: []T{}}
 }
 
-// List from the given values, in order. Of[T]() with no args is empty.
-func Of[T any](vals ...T) *List[T] {
+// List from the given values, in order. ListOf[T]() with no args is empty.
+func ListOf[T any](vals ...T) *List[T] {
 	return &List[T]{items: slices.Clone(vals)}
 }
 
 // List from a slice. Copy `s` so later mutations of the original slice do not affect the list. `FromSlice(nil)` is empty.
-func FromSlice[T any](s []T) *List[T] {
+func ListFromSlice[T any](s []T) *List[T] {
 	return &List[T]{items: slices.Clone(s)}
 }
 
@@ -32,6 +32,7 @@ func (l *List[T]) Len() int {
 	return len(l.items)
 }
 
+// Add one or more elements.
 func (l *List[T]) Add(vals ...T) {
 	l.items = append(l.items, vals...)
 }
@@ -117,3 +118,5 @@ func Contains[T comparable](l *List[T], val T) bool {
 func Sort[T cmp.Ordered](l *List[T]) {
 	slices.Sort(l.items)
 }
+
+// TODO: add Equals

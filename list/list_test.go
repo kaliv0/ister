@@ -6,35 +6,35 @@ import (
 	"testing"
 )
 
-func TestNew(t *testing.T) {
-	eqList(t, New[int](), []int{})
+func TestNewList(t *testing.T) {
+	eqList(t, NewList[int](), []int{})
 }
 
 func TestOf(t *testing.T) {
-	eqList(t, Of(1, 2, 3), []int{1, 2, 3})
-	eqList(t, Of[int](), []int{})
+	eqList(t, ListOf(1, 2, 3), []int{1, 2, 3})
+	eqList(t, ListOf[int](), []int{})
 }
 
 func TestOfCopies(t *testing.T) {
 	src := make([]int, 3, 8)
 	copy(src, []int{1, 2, 3})
-	l := Of(src...)
+	l := ListOf(src...)
 	l.Add(4)
 	eqVal(t, src[:cap(src)][3], 0)
 	eqList(t, l, []int{1, 2, 3, 4})
 }
 
-func TestFromSlice(t *testing.T) {
+func TestListFromSlice(t *testing.T) {
 	t.Run("src mutation", func(t *testing.T) {
 		src := []int{1, 2, 3}
-		l := FromSlice(src)
+		l := ListFromSlice(src)
 		src[0] = 99
 		eqList(t, l, []int{1, 2, 3})
 		eq(t, src, []int{99, 2, 3})
 	})
 	t.Run("list mutation", func(t *testing.T) {
 		src := []int{1, 2, 3}
-		l := FromSlice(src)
+		l := ListFromSlice(src)
 		l.Set(1, 20)
 		eqVal(t, src[1], 2)
 		eqVal(t, l.Get(1), 20)
@@ -43,13 +43,13 @@ func TestFromSlice(t *testing.T) {
 
 func TestAdd(t *testing.T) {
 	t.Run("values", func(t *testing.T) {
-		l := New[int]()
+		l := NewList[int]()
 		l.Add(1)
 		l.Add(2, 3)
 		eqList(t, l, []int{1, 2, 3})
 	})
 	t.Run("no values", func(t *testing.T) {
-		l := Of(1, 2)
+		l := ListOf(1, 2)
 		l.Add()
 		eqList(t, l, []int{1, 2})
 	})
@@ -72,7 +72,7 @@ func TestInsert(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			l := Of(tc.start...)
+			l := ListOf(tc.start...)
 			l.Insert(tc.i, tc.vals...)
 			eqList(t, l, tc.want)
 		})
@@ -80,14 +80,14 @@ func TestInsert(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	l := Of(10, 20, 30)
+	l := ListOf(10, 20, 30)
 	eqVal(t, l.Get(0), 10)
 	eqVal(t, l.Get(1), 20)
 	eqVal(t, l.Get(2), 30)
 }
 
 func TestSet(t *testing.T) {
-	l := Of(1, 2, 3)
+	l := ListOf(1, 2, 3)
 	l.Set(0, 10)
 	l.Set(1, 20)
 	l.Set(2, 30)
@@ -109,7 +109,7 @@ func TestRemoveAt(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			l := Of(tc.start...)
+			l := ListOf(tc.start...)
 			eqVal(t, l.RemoveAt(tc.i), tc.wantVal)
 			eqList(t, l, tc.want)
 		})
@@ -117,7 +117,7 @@ func TestRemoveAt(t *testing.T) {
 }
 
 func TestClear(t *testing.T) {
-	l := Of(1, 2, 3, 4, 5)
+	l := ListOf(1, 2, 3, 4, 5)
 	capBefore := cap(l.items)
 	l.Clear()
 	eqList(t, l, []int{})
@@ -131,7 +131,7 @@ func TestClear(t *testing.T) {
 
 func TestClearZeros(t *testing.T) {
 	a, b := 1, 2
-	l := Of(&a, &b)
+	l := ListOf(&a, &b)
 	old := l.items
 	l.Clear()
 	eq(t, old, []*int{nil, nil})
@@ -140,14 +140,14 @@ func TestClearZeros(t *testing.T) {
 func TestAll(t *testing.T) {
 	t.Run("values", func(t *testing.T) {
 		var vals []int
-		for v := range Of(1, 2, 3).All() {
+		for v := range ListOf(1, 2, 3).All() {
 			vals = append(vals, v)
 		}
 		eq(t, vals, []int{1, 2, 3})
 	})
 	t.Run("early break", func(t *testing.T) {
 		var vals []int
-		for v := range Of(1, 2, 3).All() {
+		for v := range ListOf(1, 2, 3).All() {
 			vals = append(vals, v)
 			if v == 2 {
 				break
@@ -156,12 +156,12 @@ func TestAll(t *testing.T) {
 		eq(t, vals, []int{1, 2})
 	})
 	t.Run("empty", func(t *testing.T) {
-		for range New[int]().All() {
+		for range NewList[int]().All() {
 			t.Fatal("empty list should not yield")
 		}
 	})
 	t.Run("live view", func(t *testing.T) {
-		l := Of(1, 2, 3)
+		l := ListOf(1, 2, 3)
 		var vals []int
 		for v := range l.All() {
 			vals = append(vals, v)
@@ -174,7 +174,7 @@ func TestAll(t *testing.T) {
 }
 
 func TestToSlice(t *testing.T) {
-	l := Of(1, 2, 3)
+	l := ListOf(1, 2, 3)
 	a := l.ToSlice()
 	eq(t, a, []int{1, 2, 3})
 
@@ -183,15 +183,15 @@ func TestToSlice(t *testing.T) {
 }
 
 func TestToSliceEmpty(t *testing.T) {
-	cleared := Of(1, 2)
+	cleared := ListOf(1, 2)
 	cleared.Clear()
 	cases := []struct {
 		name string
 		got  []int
 	}{
-		{"New", New[int]().ToSlice()},
-		{"Of", Of[int]().ToSlice()},
-		{"FromSlice nil", FromSlice([]int(nil)).ToSlice()},
+		{"NewList", NewList[int]().ToSlice()},
+		{"ListOf", ListOf[int]().ToSlice()},
+		{"ListFromSlice nil", ListFromSlice([]int(nil)).ToSlice()},
 		{"after Clear", cleared.ToSlice()},
 	}
 	for _, tc := range cases {
@@ -217,7 +217,7 @@ func TestRemove(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			l := Of(tc.start...)
+			l := ListOf(tc.start...)
 			eqVal(t, Remove(l, tc.val), tc.ok)
 			eqList(t, l, tc.want)
 		})
@@ -231,9 +231,9 @@ func TestIndex(t *testing.T) {
 		val  int
 		want int
 	}{
-		{"found", Of(1, 2, 3), 2, 1},
-		{"missing", Of(1, 2, 3), 9, -1},
-		{"empty", New[int](), 1, -1},
+		{"found", ListOf(1, 2, 3), 2, 1},
+		{"missing", ListOf(1, 2, 3), 9, -1},
+		{"empty", NewList[int](), 1, -1},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -249,9 +249,9 @@ func TestContains(t *testing.T) {
 		val  int
 		want bool
 	}{
-		{"found", Of(1, 2, 3), 2, true},
-		{"missing", Of(1, 2, 3), 9, false},
-		{"empty", New[int](), 1, false},
+		{"found", ListOf(1, 2, 3), 2, true},
+		{"missing", ListOf(1, 2, 3), 9, false},
+		{"empty", NewList[int](), 1, false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -272,7 +272,7 @@ func TestReverse(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			l := Of(tc.start...)
+			l := ListOf(tc.start...)
 			l.Reverse()
 			eqList(t, l, tc.want)
 		})
@@ -292,7 +292,7 @@ func TestSort(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			l := Of(tc.start...)
+			l := ListOf(tc.start...)
 			Sort(l)
 			eqList(t, l, tc.want)
 		})
@@ -305,9 +305,9 @@ func TestString(t *testing.T) {
 		got  string
 		want string
 	}{
-		{"ints", Of(1, 2, 3).String(), "[1, 2, 3]"},
-		{"empty", New[int]().String(), "[]"},
-		{"stringer", Of(ident(1), ident(2)).String(), "[id=1, id=2]"},
+		{"ints", ListOf(1, 2, 3).String(), "[1, 2, 3]"},
+		{"empty", NewList[int]().String(), "[]"},
+		{"stringer", ListOf(ident(1), ident(2)).String(), "[id=1, id=2]"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -317,8 +317,8 @@ func TestString(t *testing.T) {
 }
 
 func TestOutOfRangePanics(t *testing.T) {
-	l := Of(1)
-	empty := New[int]()
+	l := ListOf(1)
+	empty := NewList[int]()
 	cases := []struct {
 		name string
 		fn   func()
