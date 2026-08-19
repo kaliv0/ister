@@ -1,9 +1,10 @@
 package set
 
 import (
-	"fmt"
 	"slices"
 	"testing"
+
+	"github.com/kaliv0/ister/internal/testutil"
 )
 
 func TestNewSet(t *testing.T) {
@@ -22,7 +23,7 @@ func TestSetFromSlice(t *testing.T) {
 		s := SetFromSlice(src)
 		src[0] = 99
 		eqSet(t, s, []int{1, 2, 3})
-		eq(t, src, []int{99, 2, 3})
+		testutil.Eq(t, src, []int{99, 2, 3})
 	})
 	t.Run("duplicates", func(t *testing.T) {
 		eqSet(t, SetFromSlice([]int{1, 2, 2, 3, 1}), []int{1, 2, 3})
@@ -34,15 +35,15 @@ func TestSetFromSlice(t *testing.T) {
 
 func TestZeroValue(t *testing.T) {
 	s := &Set[int]{}
-	eqVal(t, s.Len(), 0)
-	eqVal(t, s.Contains(1), false)
+	testutil.EqVal(t, s.Len(), 0)
+	testutil.EqVal(t, s.Contains(1), false)
 	s.Add(1)
 	eqSet(t, s, []int{1})
 }
 
 func TestLen(t *testing.T) {
-	eqVal(t, NewSet[int]().Len(), 0)
-	eqVal(t, SetOf(1, 2, 2).Len(), 2)
+	testutil.EqVal(t, NewSet[int]().Len(), 0)
+	testutil.EqVal(t, SetOf(1, 2, 2).Len(), 2)
 }
 
 func TestAdd(t *testing.T) {
@@ -77,7 +78,7 @@ func TestContains(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			eqVal(t, tc.s.Contains(tc.val), tc.want)
+			testutil.EqVal(t, tc.s.Contains(tc.val), tc.want)
 		})
 	}
 }
@@ -97,7 +98,7 @@ func TestRemove(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			s := SetOf(tc.start...)
-			eqVal(t, s.Remove(tc.val), tc.ok)
+			testutil.EqVal(t, s.Remove(tc.val), tc.ok)
 			eqSet(t, s, tc.want)
 		})
 	}
@@ -118,7 +119,7 @@ func TestAll(t *testing.T) {
 			vals = append(vals, v)
 		}
 		slices.Sort(vals)
-		eq(t, vals, []int{1, 2, 3})
+		testutil.Eq(t, vals, []int{1, 2, 3})
 	})
 	t.Run("early break", func(t *testing.T) {
 		n := 0
@@ -126,7 +127,7 @@ func TestAll(t *testing.T) {
 			n++
 			break
 		}
-		eqVal(t, n, 1)
+		testutil.EqVal(t, n, 1)
 	})
 	t.Run("empty", func(t *testing.T) {
 		for range NewSet[int]().All() {
@@ -139,12 +140,12 @@ func TestToSlice(t *testing.T) {
 	s := SetOf(1, 2, 3)
 	a := s.ToSlice()
 	slices.Sort(a)
-	eq(t, a, []int{1, 2, 3})
+	testutil.Eq(t, a, []int{1, 2, 3})
 
 	a[0] = 99
 	got := s.ToSlice()
 	slices.Sort(got)
-	eq(t, got, []int{1, 2, 3})
+	testutil.Eq(t, got, []int{1, 2, 3})
 }
 
 func TestToSliceEmpty(t *testing.T) {
@@ -161,7 +162,7 @@ func TestToSliceEmpty(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			nonNilEmpty(t, tc.got)
+			testutil.NonNilEmpty(t, tc.got)
 		})
 	}
 }
@@ -174,143 +175,199 @@ func TestString(t *testing.T) {
 	}{
 		{"empty", NewSet[int]().String(), "{}"},
 		{"single", SetOf(1).String(), "{1}"},
-		{"stringer", SetOf(ident(1)).String(), "{id=1}"},
+		{"stringer", SetOf(testutil.Ident(1)).String(), "{id=1}"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			eqVal(t, tc.got, tc.want)
+			testutil.EqVal(t, tc.got, tc.want)
 		})
 	}
 }
 
-// func TestUnion(t *testing.T) {
-// 	cases := []struct {
-// 		name string
-// 		a, b []int
-// 		want []int
-// 	}{
-// 		{"overlap", []int{1, 2}, []int{2, 3}, []int{1, 2, 3}},
-// 		{"disjoint", []int{1}, []int{2}, []int{1, 2}},
-// 		{"empty other", []int{1, 2}, nil, []int{1, 2}},
-// 		{"empty self", nil, []int{1, 2}, []int{1, 2}},
-// 		{"both empty", nil, nil, []int{}},
-// 	}
-// 	for _, tc := range cases {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			a, b := SetOf(tc.a...), SetOf(tc.b...)
-// 			eqSet(t, a.Union(b), tc.want)
-// 			eqSet(t, a, tc.a)
-// 			eqSet(t, b, tc.b)
-// 		})
-// 	}
-// }
+func TestUnion(t *testing.T) {
+	cases := []struct {
+		name string
+		a, b []int
+		want []int
+	}{
+		{"overlap", []int{1, 2}, []int{2, 3}, []int{1, 2, 3}},
+		{"disjoint", []int{1}, []int{2}, []int{1, 2}},
+		{"empty other", []int{1, 2}, nil, []int{1, 2}},
+		{"empty self", nil, []int{1, 2}, []int{1, 2}},
+		{"both empty", nil, nil, []int{}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a, b := SetOf(tc.a...), SetOf(tc.b...)
+			eqSet(t, a.Union(b), tc.want)
+			eqSet(t, a, tc.a)
+			eqSet(t, b, tc.b)
+		})
+	}
+}
 
-// func TestIntersect(t *testing.T) {
-// 	cases := []struct {
-// 		name string
-// 		a, b []int
-// 		want []int
-// 	}{
-// 		{"overlap", []int{1, 2, 3}, []int{2, 3, 4}, []int{2, 3}},
-// 		{"one sided", []int{1, 2, 3}, []int{2}, []int{2}},
-// 		{"other larger", []int{2}, []int{1, 2, 3}, []int{2}},
-// 		{"disjoint", []int{1}, []int{2}, []int{}},
-// 		{"empty other", []int{1, 2}, nil, []int{}},
-// 		{"empty self", nil, []int{1, 2}, []int{}},
-// 	}
-// 	for _, tc := range cases {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			a, b := SetOf(tc.a...), SetOf(tc.b...)
-// 			eqSet(t, a.Intersect(b), tc.want)
-// 			eqSet(t, a, tc.a)
-// 			eqSet(t, b, tc.b)
-// 		})
-// 	}
-// }
+func TestIntersect(t *testing.T) {
+	cases := []struct {
+		name string
+		a, b []int
+		want []int
+	}{
+		{"overlap", []int{1, 2, 3}, []int{2, 3, 4}, []int{2, 3}},
+		{"one sided", []int{1, 2, 3}, []int{2}, []int{2}},
+		{"other larger", []int{2}, []int{1, 2, 3}, []int{2}},
+		{"disjoint", []int{1}, []int{2}, []int{}},
+		{"empty other", []int{1, 2}, nil, []int{}},
+		{"empty self", nil, []int{1, 2}, []int{}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a, b := SetOf(tc.a...), SetOf(tc.b...)
+			eqSet(t, a.Intersect(b), tc.want)
+			eqSet(t, a, tc.a)
+			eqSet(t, b, tc.b)
+		})
+	}
+}
 
-// func TestDifference(t *testing.T) {
-// 	cases := []struct {
-// 		name string
-// 		a, b []int
-// 		want []int
-// 	}{
-// 		{"partial", []int{1, 2, 3}, []int{2}, []int{1, 3}},
-// 		{"all removed", []int{1, 2}, []int{1, 2, 3}, []int{}},
-// 		{"empty other", []int{1, 2}, nil, []int{1, 2}},
-// 		{"empty self", nil, []int{1}, []int{}},
-// 		{"disjoint", []int{1, 2}, []int{3}, []int{1, 2}},
-// 	}
-// 	for _, tc := range cases {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			a, b := SetOf(tc.a...), SetOf(tc.b...)
-// 			eqSet(t, a.Difference(b), tc.want)
-// 			eqSet(t, a, tc.a)
-// 			eqSet(t, b, tc.b)
-// 		})
-// 	}
-// }
+func TestDifference(t *testing.T) {
+	cases := []struct {
+		name string
+		a, b []int
+		want []int
+	}{
+		{"partial", []int{1, 2, 3}, []int{2}, []int{1, 3}},
+		{"all removed", []int{1, 2}, []int{1, 2, 3}, []int{}},
+		{"empty other", []int{1, 2}, nil, []int{1, 2}},
+		{"empty self", nil, []int{1}, []int{}},
+		{"disjoint", []int{1, 2}, []int{3}, []int{1, 2}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a, b := SetOf(tc.a...), SetOf(tc.b...)
+			eqSet(t, a.Difference(b), tc.want)
+			eqSet(t, a, tc.a)
+			eqSet(t, b, tc.b)
+		})
+	}
+}
 
-// func TestEqual(t *testing.T) {
-// 	cases := []struct {
-// 		name string
-// 		a, b *Set[int]
-// 		want bool
-// 	}{
-// 		{"same", SetOf(1, 2), SetOf(2, 1), true},
-// 		{"different", SetOf(1, 2), SetOf(1, 2, 3), false},
-// 		{"empty", NewSet[int](), SetOf[int](), true},
-// 		{"zero and NewSet", &Set[int]{}, NewSet[int](), true},
-// 		{"empty vs value", NewSet[int](), SetOf(1), false},
-// 	}
-// 	for _, tc := range cases {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			eqVal(t, tc.a.Equal(tc.b), tc.want)
-// 		})
-// 	}
-// }
+func TestEqual(t *testing.T) {
+	cases := []struct {
+		name string
+		a, b *Set[int]
+		want bool
+	}{
+		{"same", SetOf(1, 2), SetOf(2, 1), true},
+		{"different", SetOf(1, 2), SetOf(1, 2, 3), false},
+		{"empty", NewSet[int](), SetOf[int](), true},
+		{"zero and NewSet", &Set[int]{}, NewSet[int](), true},
+		{"empty vs value", NewSet[int](), SetOf(1), false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			testutil.EqVal(t, tc.a.Equal(tc.b), tc.want)
+		})
+	}
+}
 
-// func TestIsSubsetOf(t *testing.T) {
-// 	cases := []struct {
-// 		name string
-// 		a, b *Set[int]
-// 		want bool
-// 	}{
-// 		{"subset", SetOf(1, 2), SetOf(1, 2, 3), true},
-// 		{"not subset", SetOf(1, 2, 3), SetOf(1, 2), false},
-// 		{"equal", SetOf(1, 2), SetOf(2, 1), true},
-// 		{"empty of values", NewSet[int](), SetOf(1), true},
-// 		{"empty of empty", NewSet[int](), NewSet[int](), true},
-// 		{"value of empty", SetOf(1), NewSet[int](), false},
-// 	}
-// 	for _, tc := range cases {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			eqVal(t, tc.a.IsSubsetOf(tc.b), tc.want)
-// 		})
-// 	}
-// }
+func TestIsSubsetOf(t *testing.T) {
+	cases := []struct {
+		name string
+		a, b *Set[int]
+		want bool
+	}{
+		{"subset", SetOf(1, 2), SetOf(1, 2, 3), true},
+		{"not subset", SetOf(1, 2, 3), SetOf(1, 2), false},
+		{"equal", SetOf(1, 2), SetOf(2, 1), true},
+		{"empty of values", NewSet[int](), SetOf(1), true},
+		{"empty of empty", NewSet[int](), NewSet[int](), true},
+		{"value of empty", SetOf(1), NewSet[int](), false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			testutil.EqVal(t, tc.a.IsSubsetOf(tc.b), tc.want)
+		})
+	}
+}
+
+func TestIsSupersetOf(t *testing.T) {
+	cases := []struct {
+		name string
+		a, b *Set[int]
+		want bool
+	}{
+		{"superset", SetOf(1, 2, 3), SetOf(1, 2), true},
+		{"not superset", SetOf(1, 2), SetOf(1, 2, 3), false},
+		{"equal", SetOf(1, 2), SetOf(2, 1), true},
+		{"values of empty", SetOf(1), NewSet[int](), true},
+		{"empty of empty", NewSet[int](), NewSet[int](), true},
+		{"empty of values", NewSet[int](), SetOf(1), false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			testutil.EqVal(t, tc.a.IsSupersetOf(tc.b), tc.want)
+		})
+	}
+}
+
+func TestIsDisjoint(t *testing.T) {
+	cases := []struct {
+		name string
+		a, b *Set[int]
+		want bool
+	}{
+		{"disjoint", SetOf(1, 2), SetOf(3, 4), true},
+		{"overlap", SetOf(1, 2), SetOf(2, 3), false},
+		{"equal", SetOf(1, 2), SetOf(1, 2), false},
+		{"empty other", SetOf(1), NewSet[int](), true},
+		{"empty self", NewSet[int](), SetOf(1), true},
+		{"both empty", NewSet[int](), NewSet[int](), true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			testutil.EqVal(t, tc.a.IsDisjoint(tc.b), tc.want)
+		})
+	}
+}
+
+func TestSymmetricDifference(t *testing.T) {
+	cases := []struct {
+		name string
+		a, b []int
+		want []int
+	}{
+		{"overlap", []int{1, 2, 3}, []int{2, 3, 4}, []int{1, 4}},
+		{"disjoint", []int{1, 2}, []int{3, 4}, []int{1, 2, 3, 4}},
+		{"equal", []int{1, 2}, []int{1, 2}, []int{}},
+		{"empty other", []int{1, 2}, nil, []int{1, 2}},
+		{"empty self", nil, []int{1, 2}, []int{1, 2}},
+		{"both empty", nil, nil, []int{}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a, b := SetOf(tc.a...), SetOf(tc.b...)
+			eqSet(t, a.SymmetricDifference(b), tc.want)
+			eqSet(t, a, tc.a)
+			eqSet(t, b, tc.b)
+		})
+	}
+}
 
 func TestNilPanics(t *testing.T) {
 	var s *Set[int]
-	// other := SetOf(1)
+	other := SetOf(1)
 	cases := []struct {
 		name string
 		fn   func()
 	}{
 		{"Add", func() { s.Add(1) }},
-		// {"Union nil other", func() { other.Union(nil) }},
-		// {"Equal nil other", func() { other.Equal(nil) }},
+		{"Union nil other", func() { other.Union(nil) }},
+		{"Equal nil other", func() { other.Equal(nil) }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			mustPanic(t, tc.fn)
+			testutil.MustPanic(t, tc.fn)
 		})
-	}
-}
-
-func eq[T comparable](t *testing.T, got, want []T) {
-	t.Helper()
-	if !slices.Equal(got, want) {
-		t.Fatalf("got %v, want %v", got, want)
 	}
 }
 
@@ -324,34 +381,4 @@ func eqSet[T comparable](t *testing.T, s *Set[T], want []T) {
 			t.Fatalf("got %v, want %v", s.data, want)
 		}
 	}
-}
-
-func eqVal[T comparable](t *testing.T, got, want T) {
-	t.Helper()
-	if got != want {
-		t.Fatalf("got %v, want %v", got, want)
-	}
-}
-
-func nonNilEmpty[T any](t *testing.T, got []T) {
-	t.Helper()
-	if got == nil || len(got) != 0 {
-		t.Fatalf("got %#v, want non-nil empty slice", got)
-	}
-}
-
-func mustPanic(t *testing.T, fn func()) {
-	t.Helper()
-	defer func() {
-		if recover() == nil {
-			t.Fatal("expected panic")
-		}
-	}()
-	fn()
-}
-
-type ident int
-
-func (id ident) String() string {
-	return fmt.Sprintf("id=%d", id)
 }

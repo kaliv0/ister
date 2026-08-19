@@ -83,7 +83,7 @@ func (l *List[T]) All() iter.Seq[T] {
 	return slices.Values(l.items)
 }
 
-// Return string representation of list items
+// String representation of list items
 func (l *List[T]) String() string {
 	vals := make([]string, 0, len(l.items))
 	for _, v := range l.items {

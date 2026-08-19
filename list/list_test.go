@@ -1,9 +1,9 @@
 package list
 
 import (
-	"fmt"
-	"slices"
 	"testing"
+
+	"github.com/kaliv0/ister/internal/testutil"
 )
 
 func TestNewList(t *testing.T) {
@@ -20,7 +20,7 @@ func TestOfCopies(t *testing.T) {
 	copy(src, []int{1, 2, 3})
 	l := ListOf(src...)
 	l.Add(4)
-	eqVal(t, src[:cap(src)][3], 0)
+	testutil.EqVal(t, src[:cap(src)][3], 0)
 	eqList(t, l, []int{1, 2, 3, 4})
 }
 
@@ -30,14 +30,14 @@ func TestListFromSlice(t *testing.T) {
 		l := ListFromSlice(src)
 		src[0] = 99
 		eqList(t, l, []int{1, 2, 3})
-		eq(t, src, []int{99, 2, 3})
+		testutil.Eq(t, src, []int{99, 2, 3})
 	})
 	t.Run("list mutation", func(t *testing.T) {
 		src := []int{1, 2, 3}
 		l := ListFromSlice(src)
 		l.Set(1, 20)
-		eqVal(t, src[1], 2)
-		eqVal(t, l.Get(1), 20)
+		testutil.EqVal(t, src[1], 2)
+		testutil.EqVal(t, l.Get(1), 20)
 	})
 }
 
@@ -81,9 +81,9 @@ func TestInsert(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	l := ListOf(10, 20, 30)
-	eqVal(t, l.Get(0), 10)
-	eqVal(t, l.Get(1), 20)
-	eqVal(t, l.Get(2), 30)
+	testutil.EqVal(t, l.Get(0), 10)
+	testutil.EqVal(t, l.Get(1), 20)
+	testutil.EqVal(t, l.Get(2), 30)
 }
 
 func TestSet(t *testing.T) {
@@ -110,7 +110,7 @@ func TestRemoveAt(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			l := ListOf(tc.start...)
-			eqVal(t, l.RemoveAt(tc.i), tc.wantVal)
+			testutil.EqVal(t, l.RemoveAt(tc.i), tc.wantVal)
 			eqList(t, l, tc.want)
 		})
 	}
@@ -134,7 +134,7 @@ func TestClearZeros(t *testing.T) {
 	l := ListOf(&a, &b)
 	old := l.items
 	l.Clear()
-	eq(t, old, []*int{nil, nil})
+	testutil.Eq(t, old, []*int{nil, nil})
 }
 
 func TestAll(t *testing.T) {
@@ -143,7 +143,7 @@ func TestAll(t *testing.T) {
 		for v := range ListOf(1, 2, 3).All() {
 			vals = append(vals, v)
 		}
-		eq(t, vals, []int{1, 2, 3})
+		testutil.Eq(t, vals, []int{1, 2, 3})
 	})
 	t.Run("early break", func(t *testing.T) {
 		var vals []int
@@ -153,7 +153,7 @@ func TestAll(t *testing.T) {
 				break
 			}
 		}
-		eq(t, vals, []int{1, 2})
+		testutil.Eq(t, vals, []int{1, 2})
 	})
 	t.Run("empty", func(t *testing.T) {
 		for range NewList[int]().All() {
@@ -169,17 +169,17 @@ func TestAll(t *testing.T) {
 				l.Set(2, 99)
 			}
 		}
-		eq(t, vals, []int{1, 2, 99})
+		testutil.Eq(t, vals, []int{1, 2, 99})
 	})
 }
 
 func TestToSlice(t *testing.T) {
 	l := ListOf(1, 2, 3)
 	a := l.ToSlice()
-	eq(t, a, []int{1, 2, 3})
+	testutil.Eq(t, a, []int{1, 2, 3})
 
 	a[0] = 99
-	eq(t, l.ToSlice(), []int{1, 2, 3})
+	testutil.Eq(t, l.ToSlice(), []int{1, 2, 3})
 }
 
 func TestToSliceEmpty(t *testing.T) {
@@ -196,7 +196,7 @@ func TestToSliceEmpty(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			nonNilEmpty(t, tc.got)
+			testutil.NonNilEmpty(t, tc.got)
 		})
 	}
 }
@@ -218,7 +218,7 @@ func TestRemove(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			l := ListOf(tc.start...)
-			eqVal(t, Remove(l, tc.val), tc.ok)
+			testutil.EqVal(t, Remove(l, tc.val), tc.ok)
 			eqList(t, l, tc.want)
 		})
 	}
@@ -237,7 +237,7 @@ func TestIndex(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			eqVal(t, Index(tc.l, tc.val), tc.want)
+			testutil.EqVal(t, Index(tc.l, tc.val), tc.want)
 		})
 	}
 }
@@ -255,7 +255,7 @@ func TestContains(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			eqVal(t, Contains(tc.l, tc.val), tc.want)
+			testutil.EqVal(t, Contains(tc.l, tc.val), tc.want)
 		})
 	}
 }
@@ -307,11 +307,11 @@ func TestString(t *testing.T) {
 	}{
 		{"ints", ListOf(1, 2, 3).String(), "[1, 2, 3]"},
 		{"empty", NewList[int]().String(), "[]"},
-		{"stringer", ListOf(ident(1), ident(2)).String(), "[id=1, id=2]"},
+		{"stringer", ListOf(testutil.Ident(1), testutil.Ident(2)).String(), "[id=1, id=2]"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			eqVal(t, tc.got, tc.want)
+			testutil.EqVal(t, tc.got, tc.want)
 		})
 	}
 }
@@ -337,49 +337,12 @@ func TestOutOfRangePanics(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			mustPanic(t, tc.fn)
+			testutil.MustPanic(t, tc.fn)
 		})
-	}
-}
-
-func eq[T comparable](t *testing.T, got, want []T) {
-	t.Helper()
-	if !slices.Equal(got, want) {
-		t.Fatalf("got %v, want %v", got, want)
 	}
 }
 
 func eqList[T comparable](t *testing.T, l *List[T], want []T) {
 	t.Helper()
-	eq(t, l.items, want)
-}
-
-func eqVal[T comparable](t *testing.T, got, want T) {
-	t.Helper()
-	if got != want {
-		t.Fatalf("got %v, want %v", got, want)
-	}
-}
-
-func nonNilEmpty[T any](t *testing.T, got []T) {
-	t.Helper()
-	if got == nil || len(got) != 0 {
-		t.Fatalf("got %#v, want non-nil empty slice", got)
-	}
-}
-
-func mustPanic(t *testing.T, fn func()) {
-	t.Helper()
-	defer func() {
-		if recover() == nil {
-			t.Fatal("expected panic")
-		}
-	}()
-	fn()
-}
-
-type ident int
-
-func (id ident) String() string {
-	return fmt.Sprintf("id=%d", id)
+	testutil.Eq(t, l.items, want)
 }
