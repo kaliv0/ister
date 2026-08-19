@@ -17,19 +17,19 @@ func TestOf(t *testing.T) {
 	eqSet(t, Of(1, 2, 2, 1), []int{1, 2})
 }
 
-func TestSetFromSlice(t *testing.T) {
+func TestFromSlice(t *testing.T) {
 	t.Run("src mutation", func(t *testing.T) {
 		src := []int{1, 2, 3}
-		s := SetFromSlice(src)
+		s := FromSlice(src)
 		src[0] = 99
 		eqSet(t, s, []int{1, 2, 3})
 		testutil.Eq(t, src, []int{99, 2, 3})
 	})
 	t.Run("duplicates", func(t *testing.T) {
-		eqSet(t, SetFromSlice([]int{1, 2, 2, 3, 1}), []int{1, 2, 3})
+		eqSet(t, FromSlice([]int{1, 2, 2, 3, 1}), []int{1, 2, 3})
 	})
 	t.Run("nil", func(t *testing.T) {
-		eqSet(t, SetFromSlice([]int(nil)), []int{})
+		eqSet(t, FromSlice([]int(nil)), []int{})
 	})
 }
 
@@ -157,7 +157,7 @@ func TestToSliceEmpty(t *testing.T) {
 	}{
 		{"New", New[int]().ToSlice()},
 		{"Of", Of[int]().ToSlice()},
-		{"SetFromSlice nil", SetFromSlice([]int(nil)).ToSlice()},
+		{"FromSlice nil", FromSlice([]int(nil)).ToSlice()},
 		{"after Clear", cleared.ToSlice()},
 	}
 	for _, tc := range cases {
@@ -354,6 +354,7 @@ func TestSymmetricDifference(t *testing.T) {
 }
 
 func TestNilPanics(t *testing.T) {
+	// TODO: reconsider removing panic
 	var s *Set[int]
 	other := Of(1)
 	cases := []struct {

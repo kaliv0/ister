@@ -23,8 +23,8 @@ func Of[T any](vals ...T) *List[T] {
 }
 
 // List from a slice. Copy `s` so later mutations of the original slice do not affect the list. `FromSlice(nil)` is empty.
-func ListFromSlice[T any](s []T) *List[T] {
-	return &List[T]{items: slices.Clone(s)}
+func FromSlice[T any](s []T) *List[T] {
+	return Of(s...)
 }
 
 // Number of elements.
@@ -44,6 +44,7 @@ func (l *List[T]) Insert(i int, val ...T) {
 
 // Element at index i. Panics if out of range.
 func (l *List[T]) Get(i int) T {
+	// TODO: don't raise if out of bounds
 	return l.items[i]
 }
 
@@ -78,7 +79,7 @@ func (l *List[T]) ToSlice() []T {
 	return slices.Clone(l.items)
 }
 
-// Yield elements from front to back. Use with `for range`. Early `break` stops iteration (`yield` must return `false` and stop).
+// Yield elements from front to back. Use with `for range`. Early `break` stops iteration.
 func (l *List[T]) All() iter.Seq[T] {
 	return slices.Values(l.items)
 }

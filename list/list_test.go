@@ -24,17 +24,17 @@ func TestOfCopies(t *testing.T) {
 	eqList(t, l, []int{1, 2, 3, 4})
 }
 
-func TestListFromSlice(t *testing.T) {
+func TestFromSlice(t *testing.T) {
 	t.Run("src mutation", func(t *testing.T) {
 		src := []int{1, 2, 3}
-		l := ListFromSlice(src)
+		l := FromSlice(src)
 		src[0] = 99
 		eqList(t, l, []int{1, 2, 3})
 		testutil.Eq(t, src, []int{99, 2, 3})
 	})
 	t.Run("list mutation", func(t *testing.T) {
 		src := []int{1, 2, 3}
-		l := ListFromSlice(src)
+		l := FromSlice(src)
 		l.Set(1, 20)
 		testutil.EqVal(t, src[1], 2)
 		testutil.EqVal(t, l.Get(1), 20)
@@ -191,7 +191,7 @@ func TestToSliceEmpty(t *testing.T) {
 	}{
 		{"New", New[int]().ToSlice()},
 		{"Of", Of[int]().ToSlice()},
-		{"ListFromSlice nil", ListFromSlice([]int(nil)).ToSlice()},
+		{"FromSlice nil", FromSlice([]int(nil)).ToSlice()},
 		{"after Clear", cleared.ToSlice()},
 	}
 	for _, tc := range cases {
@@ -317,6 +317,7 @@ func TestString(t *testing.T) {
 }
 
 func TestOutOfRangePanics(t *testing.T) {
+	// TODO: reconsider removing panic
 	l := Of(1)
 	empty := New[int]()
 	cases := []struct {

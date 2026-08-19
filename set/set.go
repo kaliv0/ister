@@ -25,9 +25,8 @@ func Of[T comparable](vals ...T) *Set[T] {
 }
 
 // Set from a slice. Copy `s` so later mutations of the original slice do not affect the set.
-//
-//	Duplicates are dropped. `SetFromSlice(nil)` is empty.
-func SetFromSlice[T comparable](s []T) *Set[T] {
+// Duplicates are dropped. `FromSlice(nil)` is empty.
+func FromSlice[T comparable](s []T) *Set[T] {
 	return Of(s...)
 }
 
