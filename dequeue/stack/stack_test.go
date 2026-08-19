@@ -217,6 +217,22 @@ func TestString(t *testing.T) {
 	}
 }
 
+func TestNilReceiverPanics(t *testing.T) {
+	var s *Stack[int]
+	cases := []struct {
+		name string
+		fn   func()
+	}{
+		{"Push", func() { s.Push(1) }},
+		{"Len", func() { s.Len() }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			testutil.MustPanic(t, tc.fn)
+		})
+	}
+}
+
 func eqStack[T comparable](t *testing.T, s *Stack[T], want []T) {
 	t.Helper()
 	testutil.Eq(t, s.items, want)

@@ -13,11 +13,14 @@ type Stack[T any] struct {
 
 // Empty stack. Zero-capacity backing slice; first Push allocates.
 func New[T any]() *Stack[T] {
-	return &Stack[T]{items: []T{}}
+	return &Stack[T]{}
 }
 
 // Stack from the given values. Last value is the top.
 func Of[T any](vals ...T) *Stack[T] {
+	if len(vals) == 0 {
+		return New[T]()
+	}
 	return &Stack[T]{items: slices.Clone(vals)}
 }
 
@@ -36,7 +39,7 @@ func (s *Stack[T]) IsEmpty() bool {
 	return len(s.items) == 0
 }
 
-// Add val to the top.
+// Add val to the top. A nil receiver panics — use `New` or `Of`.
 func (s *Stack[T]) Push(val T) {
 	s.items = append(s.items, val)
 }

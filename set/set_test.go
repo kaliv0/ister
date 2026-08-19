@@ -353,17 +353,29 @@ func TestSymmetricDifference(t *testing.T) {
 	}
 }
 
-func TestNilPanics(t *testing.T) {
-	// TODO: reconsider removing panic
+func TestNilOperand(t *testing.T) {
+	eqSet(t, Of(1, 2).Union(nil), []int{1, 2})
+	eqSet(t, Of(1).Intersect(nil), []int{})
+	eqSet(t, Of(1, 2).Difference(nil), []int{1, 2})
+	eqSet(t, Of(1, 2).SymmetricDifference(nil), []int{1, 2})
+	testutil.EqVal(t, Of(1).Equal(nil), false)
+	testutil.EqVal(t, New[int]().Equal(nil), true)
+	testutil.EqVal(t, Of(1).IsSubsetOf(nil), false)
+	testutil.EqVal(t, New[int]().IsSubsetOf(nil), true)
+	testutil.EqVal(t, Of(1).IsSupersetOf(nil), true)
+	testutil.EqVal(t, New[int]().IsSupersetOf(nil), true)
+	testutil.EqVal(t, Of(1).IsDisjoint(nil), true)
+}
+
+func TestNilReceiverPanics(t *testing.T) {
 	var s *Set[int]
-	other := Of(1)
 	cases := []struct {
 		name string
 		fn   func()
 	}{
 		{"Add", func() { s.Add(1) }},
-		{"Union nil other", func() { other.Union(nil) }},
-		{"Equal nil other", func() { other.Equal(nil) }},
+		{"Union", func() { s.Union(Of(1)) }},
+		{"Equal", func() { s.Equal(New[int]()) }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

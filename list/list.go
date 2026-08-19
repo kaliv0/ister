@@ -14,11 +14,14 @@ type List[T any] struct {
 
 // Empty list. Zero-capacity backing slice; first Add allocates.
 func New[T any]() *List[T] {
-	return &List[T]{items: []T{}}
+	return &List[T]{}
 }
 
 // List from the given values, in order. Of[T]() with no args is empty.
 func Of[T any](vals ...T) *List[T] {
+	if len(vals) == 0 {
+		return New[T]()
+	}
 	return &List[T]{items: slices.Clone(vals)}
 }
 
@@ -32,7 +35,7 @@ func (l *List[T]) Len() int {
 	return len(l.items)
 }
 
-// Add one or more elements.
+// Add one or more elements. A nil receiver panics — use `New` or `Of`.
 func (l *List[T]) Add(vals ...T) {
 	l.items = append(l.items, vals...)
 }
@@ -113,8 +116,9 @@ func (l *List[T]) String() string {
 }
 
 // ---- Package level utils ----//
-// Remove the first element equal to `val`. Returns whether it was found. Missing: `false`, list unchanged.
+// Remove the first element equal to `val`. Returns whether it was found. Missing: `false`, list unchanged. A nil `l` is treated as empty.
 func Remove[T comparable](l *List[T], val T) bool {
+	l = coalesce(l)
 	i := slices.Index(l.items, val)
 	if i == -1 {
 		return false
@@ -124,19 +128,27 @@ func Remove[T comparable](l *List[T], val T) bool {
 	return true
 }
 
-// Index of the first element equal to `val`, or `-1`.
+// Index of the first element equal to `val`, or `-1`. A nil `l` is treated as empty.
 func Index[T comparable](l *List[T], val T) int {
+	l = coalesce(l)
 	return slices.Index(l.items, val)
 }
 
-// Whether `val` is in the list (`==`).
+// Whether `val` is in the list (`==`). A nil `l` is treated as empty.
 func Contains[T comparable](l *List[T], val T) bool {
+	l = coalesce(l)
 	return slices.Contains(l.items, val)
 }
 
-// Sort all elements.
+// Sort all elements. A nil `l` is treated as empty.
 func Sort[T cmp.Ordered](l *List[T]) {
+	l = coalesce(l)
 	slices.Sort(l.items)
 }
 
-// TODO: add Equals
+func coalesce[T any](l *List[T]) *List[T] {
+	if l != nil {
+		return l
+	}
+	return New[T]()
+}

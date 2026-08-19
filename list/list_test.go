@@ -351,6 +351,29 @@ func TestString(t *testing.T) {
 	}
 }
 
+func TestNilListParam(t *testing.T) {
+	testutil.EqVal(t, Contains[int](nil, 1), false)
+	testutil.EqVal(t, Index[int](nil, 1), -1)
+	testutil.EqVal(t, Remove[int](nil, 1), false)
+	Sort[int](nil)
+}
+
+func TestNilReceiverPanics(t *testing.T) {
+	var l *List[int]
+	cases := []struct {
+		name string
+		fn   func()
+	}{
+		{"Add", func() { l.Add(1) }},
+		{"Len", func() { l.Len() }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			testutil.MustPanic(t, tc.fn)
+		})
+	}
+}
+
 func eqList[T comparable](t *testing.T, l *List[T], want []T) {
 	t.Helper()
 	testutil.Eq(t, l.items, want)

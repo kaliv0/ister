@@ -35,7 +35,7 @@ func (s *Set[T]) Len() int {
 	return len(s.data)
 }
 
-// Add one or more elements.
+// Add one or more elements. A nil receiver panics — use `New` or `Of`.
 func (s *Set[T]) Add(vals ...T) {
 	if len(vals) == 0 {
 		return
@@ -90,8 +90,9 @@ func (s *Set[T]) String() string {
 	return "{" + strings.Join(vals, ", ") + "}"
 }
 
-// Elements in `s` or `other` (or both).
+// Elements in `s` or `other` (or both). A nil `other` is treated as empty.
 func (s *Set[T]) Union(other *Set[T]) *Set[T] {
+	other = coalesce(other)
 	result := New[T]()
 	if n := s.Len() + other.Len(); n > 0 {
 		result.data = make(map[T]struct{}, n)
@@ -101,8 +102,9 @@ func (s *Set[T]) Union(other *Set[T]) *Set[T] {
 	return result
 }
 
-// Elements in both `s` and `other`.
+// Elements in both `s` and `other`. A nil `other` is treated as empty.
 func (s *Set[T]) Intersect(other *Set[T]) *Set[T] {
+	other = coalesce(other)
 	result := New[T]()
 	if n := s.Len() + other.Len(); n == 0 {
 		return result
@@ -119,8 +121,9 @@ func (s *Set[T]) Intersect(other *Set[T]) *Set[T] {
 	return result
 }
 
-// Elements in `s` but not in `other`.
+// Elements in `s` but not in `other`. A nil `other` is treated as empty.
 func (s *Set[T]) Difference(other *Set[T]) *Set[T] {
+	other = coalesce(other)
 	result := New[T]()
 	if n := s.Len() + other.Len(); n > 0 {
 		result.data = make(map[T]struct{}, s.Len())
@@ -134,8 +137,9 @@ func (s *Set[T]) Difference(other *Set[T]) *Set[T] {
 	return result
 }
 
-// Elements in `s` or `other` but not both.
+// Elements in `s` or `other` but not both. A nil `other` is treated as empty.
 func (s *Set[T]) SymmetricDifference(other *Set[T]) *Set[T] {
+	other = coalesce(other)
 	result := New[T]()
 	if n := s.Len() + other.Len(); n > 0 {
 		result.data = make(map[T]struct{}, n)
@@ -155,22 +159,24 @@ func (s *Set[T]) SymmetricDifference(other *Set[T]) *Set[T] {
 	return result
 }
 
-// Whether `s` and `other` contain the same elements. Order does not matter.
+// Whether `s` and `other` contain the same elements. Order does not matter. A nil `other` is treated as empty.
 func (s *Set[T]) Equal(other *Set[T]) bool {
+	other = coalesce(other)
 	return maps.Equal(s.data, other.data)
 }
 
-// Whether every element of `s` is in `other`. Empty set is a subset of every set.
+// Whether every element of `s` is in `other`. Empty set is a subset of every set. A nil `other` is treated as empty.
 func (s *Set[T]) IsSubsetOf(other *Set[T]) bool {
 	return isSubset(s, other)
 }
 
-// Whether every element of `other` is in `s`. Convenience inverse of IsSubsetOf.
+// Whether every element of `other` is in `s`. Convenience inverse of IsSubsetOf. A nil `other` is treated as empty.
 func (s *Set[T]) IsSupersetOf(other *Set[T]) bool {
 	return isSubset(other, s)
 }
 
 func isSubset[T comparable](a, b *Set[T]) bool {
+	a, b = coalesce(a), coalesce(b)
 	if a.Len() == 0 {
 		return true
 	}
@@ -186,8 +192,9 @@ func isSubset[T comparable](a, b *Set[T]) bool {
 	return true
 }
 
-// Whether `s` and `other` share no elements.
+// Whether `s` and `other` share no elements. A nil `other` is treated as empty.
 func (s *Set[T]) IsDisjoint(other *Set[T]) bool {
+	other = coalesce(other)
 	if s.Len()+other.Len() == 0 {
 		return true
 	}
@@ -206,4 +213,11 @@ func compare[T comparable](a, b *Set[T]) (small, big *Set[T]) {
 		return a, b
 	}
 	return b, a
+}
+
+func coalesce[T comparable](s *Set[T]) *Set[T] {
+	if s != nil {
+		return s
+	}
+	return New[T]()
 }
