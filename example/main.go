@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	l := list.ListOf(1, 2, 3)
+	l := list.Of(1, 2, 3)
 	l.Add(4)
 	l.Reverse()
 	l.RemoveAt(1)

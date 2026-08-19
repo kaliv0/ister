@@ -7,14 +7,14 @@ import (
 	"github.com/kaliv0/ister/internal/testutil"
 )
 
-func TestNewSet(t *testing.T) {
-	eqSet(t, NewSet[int](), []int{})
+func TestNew(t *testing.T) {
+	eqSet(t, New[int](), []int{})
 }
 
-func TestSetOf(t *testing.T) {
-	eqSet(t, SetOf(1, 2, 3), []int{1, 2, 3})
-	eqSet(t, SetOf[int](), []int{})
-	eqSet(t, SetOf(1, 2, 2, 1), []int{1, 2})
+func TestOf(t *testing.T) {
+	eqSet(t, Of(1, 2, 3), []int{1, 2, 3})
+	eqSet(t, Of[int](), []int{})
+	eqSet(t, Of(1, 2, 2, 1), []int{1, 2})
 }
 
 func TestSetFromSlice(t *testing.T) {
@@ -42,24 +42,24 @@ func TestZeroValue(t *testing.T) {
 }
 
 func TestLen(t *testing.T) {
-	testutil.EqVal(t, NewSet[int]().Len(), 0)
-	testutil.EqVal(t, SetOf(1, 2, 2).Len(), 2)
+	testutil.EqVal(t, New[int]().Len(), 0)
+	testutil.EqVal(t, Of(1, 2, 2).Len(), 2)
 }
 
 func TestAdd(t *testing.T) {
 	t.Run("values", func(t *testing.T) {
-		s := NewSet[int]()
+		s := New[int]()
 		s.Add(1)
 		s.Add(2, 3)
 		eqSet(t, s, []int{1, 2, 3})
 	})
 	t.Run("no values", func(t *testing.T) {
-		s := SetOf(1, 2)
+		s := Of(1, 2)
 		s.Add()
 		eqSet(t, s, []int{1, 2})
 	})
 	t.Run("duplicates", func(t *testing.T) {
-		s := SetOf(1)
+		s := Of(1)
 		s.Add(1, 2, 1)
 		eqSet(t, s, []int{1, 2})
 	})
@@ -72,9 +72,9 @@ func TestContains(t *testing.T) {
 		val  int
 		want bool
 	}{
-		{"found", SetOf(1, 2, 3), 2, true},
-		{"missing", SetOf(1, 2, 3), 9, false},
-		{"empty", NewSet[int](), 1, false},
+		{"found", Of(1, 2, 3), 2, true},
+		{"missing", Of(1, 2, 3), 9, false},
+		{"empty", New[int](), 1, false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -97,7 +97,7 @@ func TestRemove(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			s := SetOf(tc.start...)
+			s := Of(tc.start...)
 			testutil.EqVal(t, s.Remove(tc.val), tc.ok)
 			eqSet(t, s, tc.want)
 		})
@@ -105,7 +105,7 @@ func TestRemove(t *testing.T) {
 }
 
 func TestClear(t *testing.T) {
-	s := SetOf(1, 2, 3)
+	s := Of(1, 2, 3)
 	s.Clear()
 	eqSet(t, s, []int{})
 	s.Add(4)
@@ -115,7 +115,7 @@ func TestClear(t *testing.T) {
 func TestAll(t *testing.T) {
 	t.Run("values", func(t *testing.T) {
 		var vals []int
-		for v := range SetOf(1, 2, 3).All() {
+		for v := range Of(1, 2, 3).All() {
 			vals = append(vals, v)
 		}
 		slices.Sort(vals)
@@ -123,21 +123,21 @@ func TestAll(t *testing.T) {
 	})
 	t.Run("early break", func(t *testing.T) {
 		n := 0
-		for range SetOf(1, 2, 3).All() {
+		for range Of(1, 2, 3).All() {
 			n++
 			break
 		}
 		testutil.EqVal(t, n, 1)
 	})
 	t.Run("empty", func(t *testing.T) {
-		for range NewSet[int]().All() {
+		for range New[int]().All() {
 			t.Fatal("empty set should not yield")
 		}
 	})
 }
 
 func TestToSlice(t *testing.T) {
-	s := SetOf(1, 2, 3)
+	s := Of(1, 2, 3)
 	a := s.ToSlice()
 	slices.Sort(a)
 	testutil.Eq(t, a, []int{1, 2, 3})
@@ -149,14 +149,14 @@ func TestToSlice(t *testing.T) {
 }
 
 func TestToSliceEmpty(t *testing.T) {
-	cleared := SetOf(1, 2)
+	cleared := Of(1, 2)
 	cleared.Clear()
 	cases := []struct {
 		name string
 		got  []int
 	}{
-		{"NewSet", NewSet[int]().ToSlice()},
-		{"SetOf", SetOf[int]().ToSlice()},
+		{"New", New[int]().ToSlice()},
+		{"Of", Of[int]().ToSlice()},
 		{"SetFromSlice nil", SetFromSlice([]int(nil)).ToSlice()},
 		{"after Clear", cleared.ToSlice()},
 	}
@@ -173,9 +173,9 @@ func TestString(t *testing.T) {
 		got  string
 		want string
 	}{
-		{"empty", NewSet[int]().String(), "{}"},
-		{"single", SetOf(1).String(), "{1}"},
-		{"stringer", SetOf(testutil.Ident(1)).String(), "{id=1}"},
+		{"empty", New[int]().String(), "{}"},
+		{"single", Of(1).String(), "{1}"},
+		{"stringer", Of(testutil.Ident(1)).String(), "{id=1}"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -198,7 +198,7 @@ func TestUnion(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a, b := SetOf(tc.a...), SetOf(tc.b...)
+			a, b := Of(tc.a...), Of(tc.b...)
 			eqSet(t, a.Union(b), tc.want)
 			eqSet(t, a, tc.a)
 			eqSet(t, b, tc.b)
@@ -221,7 +221,7 @@ func TestIntersect(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a, b := SetOf(tc.a...), SetOf(tc.b...)
+			a, b := Of(tc.a...), Of(tc.b...)
 			eqSet(t, a.Intersect(b), tc.want)
 			eqSet(t, a, tc.a)
 			eqSet(t, b, tc.b)
@@ -243,7 +243,7 @@ func TestDifference(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a, b := SetOf(tc.a...), SetOf(tc.b...)
+			a, b := Of(tc.a...), Of(tc.b...)
 			eqSet(t, a.Difference(b), tc.want)
 			eqSet(t, a, tc.a)
 			eqSet(t, b, tc.b)
@@ -257,11 +257,11 @@ func TestEqual(t *testing.T) {
 		a, b *Set[int]
 		want bool
 	}{
-		{"same", SetOf(1, 2), SetOf(2, 1), true},
-		{"different", SetOf(1, 2), SetOf(1, 2, 3), false},
-		{"empty", NewSet[int](), SetOf[int](), true},
-		{"zero and NewSet", &Set[int]{}, NewSet[int](), true},
-		{"empty vs value", NewSet[int](), SetOf(1), false},
+		{"same", Of(1, 2), Of(2, 1), true},
+		{"different", Of(1, 2), Of(1, 2, 3), false},
+		{"empty", New[int](), Of[int](), true},
+		{"zero and New", &Set[int]{}, New[int](), true},
+		{"empty vs value", New[int](), Of(1), false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -276,12 +276,12 @@ func TestIsSubsetOf(t *testing.T) {
 		a, b *Set[int]
 		want bool
 	}{
-		{"subset", SetOf(1, 2), SetOf(1, 2, 3), true},
-		{"not subset", SetOf(1, 2, 3), SetOf(1, 2), false},
-		{"equal", SetOf(1, 2), SetOf(2, 1), true},
-		{"empty of values", NewSet[int](), SetOf(1), true},
-		{"empty of empty", NewSet[int](), NewSet[int](), true},
-		{"value of empty", SetOf(1), NewSet[int](), false},
+		{"subset", Of(1, 2), Of(1, 2, 3), true},
+		{"not subset", Of(1, 2, 3), Of(1, 2), false},
+		{"equal", Of(1, 2), Of(2, 1), true},
+		{"empty of values", New[int](), Of(1), true},
+		{"empty of empty", New[int](), New[int](), true},
+		{"value of empty", Of(1), New[int](), false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -296,12 +296,12 @@ func TestIsSupersetOf(t *testing.T) {
 		a, b *Set[int]
 		want bool
 	}{
-		{"superset", SetOf(1, 2, 3), SetOf(1, 2), true},
-		{"not superset", SetOf(1, 2), SetOf(1, 2, 3), false},
-		{"equal", SetOf(1, 2), SetOf(2, 1), true},
-		{"values of empty", SetOf(1), NewSet[int](), true},
-		{"empty of empty", NewSet[int](), NewSet[int](), true},
-		{"empty of values", NewSet[int](), SetOf(1), false},
+		{"superset", Of(1, 2, 3), Of(1, 2), true},
+		{"not superset", Of(1, 2), Of(1, 2, 3), false},
+		{"equal", Of(1, 2), Of(2, 1), true},
+		{"values of empty", Of(1), New[int](), true},
+		{"empty of empty", New[int](), New[int](), true},
+		{"empty of values", New[int](), Of(1), false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -316,12 +316,12 @@ func TestIsDisjoint(t *testing.T) {
 		a, b *Set[int]
 		want bool
 	}{
-		{"disjoint", SetOf(1, 2), SetOf(3, 4), true},
-		{"overlap", SetOf(1, 2), SetOf(2, 3), false},
-		{"equal", SetOf(1, 2), SetOf(1, 2), false},
-		{"empty other", SetOf(1), NewSet[int](), true},
-		{"empty self", NewSet[int](), SetOf(1), true},
-		{"both empty", NewSet[int](), NewSet[int](), true},
+		{"disjoint", Of(1, 2), Of(3, 4), true},
+		{"overlap", Of(1, 2), Of(2, 3), false},
+		{"equal", Of(1, 2), Of(1, 2), false},
+		{"empty other", Of(1), New[int](), true},
+		{"empty self", New[int](), Of(1), true},
+		{"both empty", New[int](), New[int](), true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -345,7 +345,7 @@ func TestSymmetricDifference(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a, b := SetOf(tc.a...), SetOf(tc.b...)
+			a, b := Of(tc.a...), Of(tc.b...)
 			eqSet(t, a.SymmetricDifference(b), tc.want)
 			eqSet(t, a, tc.a)
 			eqSet(t, b, tc.b)
@@ -355,7 +355,7 @@ func TestSymmetricDifference(t *testing.T) {
 
 func TestNilPanics(t *testing.T) {
 	var s *Set[int]
-	other := SetOf(1)
+	other := Of(1)
 	cases := []struct {
 		name string
 		fn   func()

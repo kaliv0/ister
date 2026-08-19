@@ -13,13 +13,13 @@ type Set[T comparable] struct {
 }
 
 // Empty set. Zero-capacity backing map; first Add allocates.
-func NewSet[T comparable]() *Set[T] {
+func New[T comparable]() *Set[T] {
 	return &Set[T]{}
 }
 
-// Set from the given values. Duplicates are dropped. SetOf[T]() with no args is empty.
-func SetOf[T comparable](vals ...T) *Set[T] {
-	s := NewSet[T]()
+// Set from the given values. Duplicates are dropped. Of[T]() with no args is empty.
+func Of[T comparable](vals ...T) *Set[T] {
+	s := New[T]()
 	s.Add(vals...)
 	return s
 }
@@ -28,7 +28,7 @@ func SetOf[T comparable](vals ...T) *Set[T] {
 //
 //	Duplicates are dropped. `SetFromSlice(nil)` is empty.
 func SetFromSlice[T comparable](s []T) *Set[T] {
-	return SetOf(s...)
+	return Of(s...)
 }
 
 // Number of elements.
@@ -93,7 +93,7 @@ func (s *Set[T]) String() string {
 
 // Elements in `s` or `other` (or both).
 func (s *Set[T]) Union(other *Set[T]) *Set[T] {
-	result := NewSet[T]()
+	result := New[T]()
 	if n := s.Len() + other.Len(); n > 0 {
 		result.data = make(map[T]struct{}, n)
 		maps.Copy(result.data, s.data)
@@ -104,7 +104,7 @@ func (s *Set[T]) Union(other *Set[T]) *Set[T] {
 
 // Elements in both `s` and `other`.
 func (s *Set[T]) Intersect(other *Set[T]) *Set[T] {
-	result := NewSet[T]()
+	result := New[T]()
 	if n := s.Len() + other.Len(); n == 0 {
 		return result
 	}
@@ -122,7 +122,7 @@ func (s *Set[T]) Intersect(other *Set[T]) *Set[T] {
 
 // Elements in `s` but not in `other`.
 func (s *Set[T]) Difference(other *Set[T]) *Set[T] {
-	result := NewSet[T]()
+	result := New[T]()
 	if n := s.Len() + other.Len(); n > 0 {
 		result.data = make(map[T]struct{}, s.Len())
 
@@ -137,7 +137,7 @@ func (s *Set[T]) Difference(other *Set[T]) *Set[T] {
 
 // Elements in `s` or `other` but not both.
 func (s *Set[T]) SymmetricDifference(other *Set[T]) *Set[T] {
-	result := NewSet[T]()
+	result := New[T]()
 	if n := s.Len() + other.Len(); n > 0 {
 		result.data = make(map[T]struct{}, n)
 

@@ -13,12 +13,12 @@ type List[T any] struct {
 }
 
 // Empty list. Zero-capacity backing slice; first Add allocates.
-func NewList[T any]() *List[T] {
+func New[T any]() *List[T] {
 	return &List[T]{items: []T{}}
 }
 
-// List from the given values, in order. ListOf[T]() with no args is empty.
-func ListOf[T any](vals ...T) *List[T] {
+// List from the given values, in order. Of[T]() with no args is empty.
+func Of[T any](vals ...T) *List[T] {
 	return &List[T]{items: slices.Clone(vals)}
 }
 
