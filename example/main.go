@@ -11,7 +11,9 @@ func main() {
 	l.Add(4)
 	l.Reverse()
 	l.RemoveAt(1)
-	fmt.Println(l.Get(0))
+
+	v, _ := l.Get(0)
+	fmt.Println(v)
 
 	for el := range l.All() {
 		fmt.Printf("%d ", el)

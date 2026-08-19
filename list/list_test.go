@@ -37,7 +37,7 @@ func TestFromSlice(t *testing.T) {
 		l := FromSlice(src)
 		l.Set(1, 20)
 		testutil.EqVal(t, src[1], 2)
-		testutil.EqVal(t, l.Get(1), 20)
+		eqList(t, l, []int{1, 20, 3})
 	})
 }
 
@@ -73,25 +73,20 @@ func TestInsert(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			l := Of(tc.start...)
-			l.Insert(tc.i, tc.vals...)
+			testutil.EqVal(t, l.Insert(tc.i, tc.vals...), true)
 			eqList(t, l, tc.want)
 		})
 	}
 }
 
-func TestGet(t *testing.T) {
+func TestGetSet(t *testing.T) {
 	l := Of(10, 20, 30)
-	testutil.EqVal(t, l.Get(0), 10)
-	testutil.EqVal(t, l.Get(1), 20)
-	testutil.EqVal(t, l.Get(2), 30)
-}
+	mustGet(t, l, 0, 10)
+	mustGet(t, l, 2, 30)
 
-func TestSet(t *testing.T) {
-	l := Of(1, 2, 3)
-	l.Set(0, 10)
-	l.Set(1, 20)
-	l.Set(2, 30)
-	eqList(t, l, []int{10, 20, 30})
+	l.Set(1, 99)
+	mustGet(t, l, 1, 99)
+	eqList(t, l, []int{10, 99, 30})
 }
 
 func TestRemoveAt(t *testing.T) {
@@ -110,10 +105,50 @@ func TestRemoveAt(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			l := Of(tc.start...)
-			testutil.EqVal(t, l.RemoveAt(tc.i), tc.wantVal)
+			got, ok := l.RemoveAt(tc.i)
+			mustTrue(t, ok)
+			testutil.EqVal(t, got, tc.wantVal)
 			eqList(t, l, tc.want)
 		})
 	}
+}
+
+func TestOutOfRange(t *testing.T) {
+	t.Run("non-empty", func(t *testing.T) {
+		l := Of(1, 2, 3)
+		if _, ok := l.Get(-1); ok {
+			t.Fatal("Get(-1)")
+		}
+		if _, ok := l.Get(10); ok {
+			t.Fatal("Get(10)")
+		}
+		if l.Set(-1, 0) || l.Set(10, 0) {
+			t.Fatal("Set")
+		}
+		if l.Insert(-1, 0) || l.Insert(10, 0) {
+			t.Fatal("Insert")
+		}
+		if _, ok := l.RemoveAt(-1); ok {
+			t.Fatal("RemoveAt(-1)")
+		}
+		if _, ok := l.RemoveAt(10); ok {
+			t.Fatal("RemoveAt(10)")
+		}
+		eqList(t, l, []int{1, 2, 3})
+	})
+	t.Run("empty", func(t *testing.T) {
+		l := New[int]()
+		if _, ok := l.Get(0); ok {
+			t.Fatal("Get")
+		}
+		if l.Set(0, 1) {
+			t.Fatal("Set")
+		}
+		if _, ok := l.RemoveAt(0); ok {
+			t.Fatal("RemoveAt")
+		}
+		eqList(t, l, []int{})
+	})
 }
 
 func TestClear(t *testing.T) {
@@ -316,34 +351,21 @@ func TestString(t *testing.T) {
 	}
 }
 
-func TestOutOfRangePanics(t *testing.T) {
-	// TODO: reconsider removing panic
-	l := Of(1)
-	empty := New[int]()
-	cases := []struct {
-		name string
-		fn   func()
-	}{
-		{"Get negative", func() { l.Get(-1) }},
-		{"Get past end", func() { l.Get(10) }},
-		{"Set negative", func() { l.Set(-1, 0) }},
-		{"Set past end", func() { l.Set(10, 0) }},
-		{"Insert negative", func() { l.Insert(-1, 0) }},
-		{"Insert past end", func() { l.Insert(10, 0) }},
-		{"RemoveAt negative", func() { l.RemoveAt(-1) }},
-		{"RemoveAt past end", func() { l.RemoveAt(10) }},
-		{"Get empty", func() { empty.Get(0) }},
-		{"Set empty", func() { empty.Set(0, 1) }},
-		{"RemoveAt empty", func() { empty.RemoveAt(0) }},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			testutil.MustPanic(t, tc.fn)
-		})
-	}
-}
-
 func eqList[T comparable](t *testing.T, l *List[T], want []T) {
 	t.Helper()
 	testutil.Eq(t, l.items, want)
+}
+
+func mustGet[T comparable](t *testing.T, l *List[T], i int, want T) {
+	t.Helper()
+	got, ok := l.Get(i)
+	mustTrue(t, ok)
+	testutil.EqVal(t, got, want)
+}
+
+func mustTrue(t *testing.T, ok bool) {
+	t.Helper()
+	if !ok {
+		t.Fatal("want true")
+	}
 }

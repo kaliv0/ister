@@ -37,27 +37,46 @@ func (l *List[T]) Add(vals ...T) {
 	l.items = append(l.items, vals...)
 }
 
-// Insert at index `i`, shifting later elements right. `i == Len()` is append. Panics if `i < 0` or `i > Len()`.
-func (l *List[T]) Insert(i int, val ...T) {
+// Insert at index `i`, shifting later elements right. `i == Len()` is append.
+func (l *List[T]) Insert(i int, val ...T) bool {
+	if i < 0 || i > l.Len() {
+		return false
+	}
 	l.items = slices.Insert(l.items, i, val...)
+	return true
 }
 
-// Element at index i. Panics if out of range.
-func (l *List[T]) Get(i int) T {
-	// TODO: don't raise if out of bounds
-	return l.items[i]
+// Element at index i.
+func (l *List[T]) Get(i int) (T, bool) {
+	if l.inRange(i) {
+		var zero T
+		return zero, false
+	}
+	return l.items[i], true
 }
 
-// Replace the element at `i`. Panics if out of range.
-func (l *List[T]) Set(i int, val T) {
+// Replace the element at `i`.
+func (l *List[T]) Set(i int, val T) bool {
+	if l.inRange(i) {
+		return false
+	}
 	l.items[i] = val
+	return true
 }
 
-// Remove the element at `i`, shift later elements left, return the removed value. Panics if out of range.
-func (l *List[T]) RemoveAt(i int) T {
+// Remove the element at `i`, shift later elements left, return the removed value.
+func (l *List[T]) RemoveAt(i int) (T, bool) {
+	if l.inRange(i) {
+		var zero T
+		return zero, false
+	}
 	val := l.items[i]
 	l.items = slices.Delete(l.items, i, i+1)
-	return val
+	return val, true
+}
+
+func (l *List[T]) inRange(i int) bool {
+	return i < 0 || i >= l.Len()
 }
 
 // Drop all elements. Keep backing capacity so later `Add`s can reuse it.
