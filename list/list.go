@@ -95,7 +95,7 @@ func (l *List[T]) Reverse() {
 
 // Copy of the current elements. Caller can mutate the result without affecting the list.
 func (l *List[T]) ToSlice() []T {
-	if len(l.items) == 0 {
+	if l.Len() == 0 {
 		return []T{}
 	}
 	return slices.Clone(l.items)
@@ -108,7 +108,7 @@ func (l *List[T]) All() iter.Seq[T] {
 
 // String representation of list items
 func (l *List[T]) String() string {
-	vals := make([]string, 0, len(l.items))
+	vals := make([]string, 0, l.Len())
 	for _, v := range l.items {
 		vals = append(vals, fmt.Sprintf("%v", v))
 	}

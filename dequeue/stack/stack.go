@@ -36,7 +36,7 @@ func (s *Stack[T]) Len() int {
 
 // Whether the stack has no elements.
 func (s *Stack[T]) IsEmpty() bool {
-	return len(s.items) == 0
+	return s.Len() == 0
 }
 
 // Add val to the top. A nil receiver panics — use `New` or `Of`.

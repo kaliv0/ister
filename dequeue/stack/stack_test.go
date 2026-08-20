@@ -25,14 +25,13 @@ func TestTypes(t *testing.T) {
 		eqStack(t, s, []string{"a", "b"})
 	})
 	t.Run("struct", func(t *testing.T) {
-		type pair struct{ A, B int }
-		s := New[pair]()
-		s.Push(pair{1, 2})
-		s.Push(pair{3, 4})
+		s := New[testutil.Pair]()
+		s.Push(testutil.Pair{A: 1, B: 2})
+		s.Push(testutil.Pair{A: 3, B: 4})
 		val, ok := s.Pop()
 		testutil.EqVal(t, ok, true)
-		testutil.EqVal(t, val, pair{3, 4})
-		eqStack(t, s, []pair{{1, 2}})
+		testutil.EqVal(t, val, testutil.Pair{A: 3, B: 4})
+		eqStack(t, s, []testutil.Pair{{A: 1, B: 2}})
 	})
 }
 

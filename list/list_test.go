@@ -19,10 +19,9 @@ func TestTypes(t *testing.T) {
 		testutil.EqVal(t, Contains(l, "b"), true)
 	})
 	t.Run("struct", func(t *testing.T) {
-		type pair struct{ A, B int }
-		l := Of(pair{1, 2}, pair{3, 4})
-		eqList(t, l, []pair{{1, 2}, {3, 4}})
-		testutil.EqVal(t, Index(l, pair{3, 4}), 1)
+		l := Of(testutil.Pair{A: 1, B: 2}, testutil.Pair{A: 3, B: 4})
+		eqList(t, l, []testutil.Pair{{A: 1, B: 2}, {A: 3, B: 4}})
+		testutil.EqVal(t, Index(l, testutil.Pair{A: 3, B: 4}), 1)
 	})
 	t.Run("float64", func(t *testing.T) {
 		l := Of(3.5, 1.25)

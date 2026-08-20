@@ -37,6 +37,9 @@ func MustPanic(t *testing.T, fn func()) {
 	fn()
 }
 
+// Pair is a comparable struct used to test non-primitive element types.
+type Pair struct{ A, B int }
+
 // Ident is a fmt.Stringer int used to test String() formatting.
 type Ident int
 

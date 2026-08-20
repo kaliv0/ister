@@ -20,10 +20,9 @@ func TestTypes(t *testing.T) {
 		eqSet(t, s, []string{"b"})
 	})
 	t.Run("struct", func(t *testing.T) {
-		type pair struct{ A, B int }
-		s := Of(pair{1, 2}, pair{1, 2}, pair{3, 4})
-		eqSet(t, s, []pair{{1, 2}, {3, 4}})
-		eqSet(t, s.Union(Of(pair{3, 4}, pair{5, 6})), []pair{{1, 2}, {3, 4}, {5, 6}})
+		s := Of(testutil.Pair{A: 1, B: 2}, testutil.Pair{A: 1, B: 2}, testutil.Pair{A: 3, B: 4})
+		eqSet(t, s, []testutil.Pair{{A: 1, B: 2}, {A: 3, B: 4}})
+		eqSet(t, s.Union(Of(testutil.Pair{A: 3, B: 4}, testutil.Pair{A: 5, B: 6})), []testutil.Pair{{A: 1, B: 2}, {A: 3, B: 4}, {A: 5, B: 6}})
 	})
 }
 
