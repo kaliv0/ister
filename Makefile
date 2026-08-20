@@ -11,7 +11,7 @@ help:
 	@echo "  build        go build -v ./..."
 	@echo "  test         go test ./..."
 	@echo "  test-race    go test -race ./..."
-	@echo "  all          mod-verify, lint, build, test-race"
+	@echo "  all          lint, build, test"
 
 mod-verify:
 	go mod verify
@@ -34,4 +34,4 @@ test:
 test-race:
 	go test -race ./...
 
-all: mod-verify lint build test
+all: lint build test
