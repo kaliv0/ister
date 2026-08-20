@@ -11,6 +11,22 @@ func TestNew(t *testing.T) {
 	eqSet(t, New[int](), []int{})
 }
 
+func TestTypes(t *testing.T) {
+	t.Run("string", func(t *testing.T) {
+		s := Of("a", "b", "a")
+		eqSet(t, s, []string{"a", "b"})
+		testutil.EqVal(t, s.Contains("b"), true)
+		testutil.EqVal(t, s.Remove("a"), true)
+		eqSet(t, s, []string{"b"})
+	})
+	t.Run("struct", func(t *testing.T) {
+		type pair struct{ A, B int }
+		s := Of(pair{1, 2}, pair{1, 2}, pair{3, 4})
+		eqSet(t, s, []pair{{1, 2}, {3, 4}})
+		eqSet(t, s.Union(Of(pair{3, 4}, pair{5, 6})), []pair{{1, 2}, {3, 4}, {5, 6}})
+	})
+}
+
 func TestOf(t *testing.T) {
 	eqSet(t, Of(1, 2, 3), []int{1, 2, 3})
 	eqSet(t, Of[int](), []int{})

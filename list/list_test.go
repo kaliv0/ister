@@ -10,6 +10,27 @@ func TestNew(t *testing.T) {
 	eqList(t, New[int](), []int{})
 }
 
+func TestTypes(t *testing.T) {
+	t.Run("string", func(t *testing.T) {
+		l := Of("a", "b")
+		l.Add("c")
+		eqList(t, l, []string{"a", "b", "c"})
+		mustGet(t, l, 1, "b")
+		testutil.EqVal(t, Contains(l, "b"), true)
+	})
+	t.Run("struct", func(t *testing.T) {
+		type pair struct{ A, B int }
+		l := Of(pair{1, 2}, pair{3, 4})
+		eqList(t, l, []pair{{1, 2}, {3, 4}})
+		testutil.EqVal(t, Index(l, pair{3, 4}), 1)
+	})
+	t.Run("float64", func(t *testing.T) {
+		l := Of(3.5, 1.25)
+		Sort(l)
+		eqList(t, l, []float64{1.25, 3.5})
+	})
+}
+
 func TestOf(t *testing.T) {
 	eqList(t, Of(1, 2, 3), []int{1, 2, 3})
 	eqList(t, Of[int](), []int{})

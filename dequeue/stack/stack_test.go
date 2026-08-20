@@ -12,6 +12,30 @@ func TestStack(t *testing.T) {
 	testutil.EqVal(t, s.IsEmpty(), true)
 }
 
+func TestTypes(t *testing.T) {
+	t.Run("string", func(t *testing.T) {
+		s := Of("a", "b")
+		s.Push("c")
+		top, ok := s.Peek()
+		testutil.EqVal(t, ok, true)
+		testutil.EqVal(t, top, "c")
+		val, ok := s.Pop()
+		testutil.EqVal(t, ok, true)
+		testutil.EqVal(t, val, "c")
+		eqStack(t, s, []string{"a", "b"})
+	})
+	t.Run("struct", func(t *testing.T) {
+		type pair struct{ A, B int }
+		s := New[pair]()
+		s.Push(pair{1, 2})
+		s.Push(pair{3, 4})
+		val, ok := s.Pop()
+		testutil.EqVal(t, ok, true)
+		testutil.EqVal(t, val, pair{3, 4})
+		eqStack(t, s, []pair{{1, 2}})
+	})
+}
+
 func TestOf(t *testing.T) {
 	eqStack(t, Of(1, 2, 3), []int{1, 2, 3})
 	eqStack(t, Of[int](), []int{})
