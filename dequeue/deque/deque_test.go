@@ -51,16 +51,6 @@ func TestOfCopies(t *testing.T) {
 	eqDeque(t, d, []int{1, 2, 3, 4})
 }
 
-func TestOfOrder(t *testing.T) {
-	d := Of(1, 2, 3)
-	front, ok := d.PeekFront()
-	testutil.EqVal(t, ok, true)
-	testutil.EqVal(t, front, 1)
-	back, ok := d.PeekBack()
-	testutil.EqVal(t, ok, true)
-	testutil.EqVal(t, back, 3)
-}
-
 func TestOfCapacity(t *testing.T) {
 	cases := []struct {
 		name    string
@@ -110,20 +100,21 @@ func TestFromSlice(t *testing.T) {
 }
 
 func TestZeroValue(t *testing.T) {
-	t.Run("PushBack", func(t *testing.T) {
-		d := &Deque[int]{}
-		testutil.EqVal(t, d.Len(), 0)
-		d.PushBack(1)
-		eqDeque(t, d, []int{1})
-		testutil.EqVal(t, cap(d.buf), 8)
-	})
-	t.Run("PushFront", func(t *testing.T) {
-		d := &Deque[int]{}
-		testutil.EqVal(t, d.Len(), 0)
-		d.PushFront(1)
-		eqDeque(t, d, []int{1})
-		testutil.EqVal(t, cap(d.buf), 8)
-	})
+	for _, tc := range []struct {
+		name string
+		push func(*Deque[int], int)
+	}{
+		{"PushBack", (*Deque[int]).PushBack},
+		{"PushFront", (*Deque[int]).PushFront},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			d := &Deque[int]{}
+			testutil.EqVal(t, d.Len(), 0)
+			tc.push(d, 1)
+			eqDeque(t, d, []int{1})
+			testutil.EqVal(t, cap(d.buf), 8)
+		})
+	}
 }
 
 func TestLen(t *testing.T) {
@@ -136,56 +127,53 @@ func TestIsEmpty(t *testing.T) {
 	testutil.EqVal(t, Of(1).IsEmpty(), false)
 }
 
-func TestPushBack(t *testing.T) {
-	d := New[int]()
-	d.PushBack(1)
-	d.PushBack(2)
-	d.PushBack(3)
-	eqDeque(t, d, []int{1, 2, 3})
-	testutil.EqVal(t, cap(d.buf), 8)
+func TestPush(t *testing.T) {
+	t.Run("back", func(t *testing.T) {
+		d := New[int]()
+		d.PushBack(1)
+		d.PushBack(2)
+		d.PushBack(3)
+		eqDeque(t, d, []int{1, 2, 3})
+		testutil.EqVal(t, cap(d.buf), 8)
+	})
+	t.Run("front", func(t *testing.T) {
+		d := New[int]()
+		d.PushFront(1)
+		d.PushFront(2)
+		d.PushFront(3)
+		eqDeque(t, d, []int{3, 2, 1})
+		testutil.EqVal(t, cap(d.buf), 8)
+	})
+	t.Run("both ends", func(t *testing.T) {
+		d := New[int]()
+		d.PushBack(2)
+		d.PushFront(1)
+		d.PushBack(3)
+		d.PushFront(0)
+		eqDeque(t, d, []int{0, 1, 2, 3})
+	})
 }
 
-func TestGrowFromPushBack(t *testing.T) {
-	d := Of(1, 2, 3, 4, 5, 6, 7, 8)
-	testutil.EqVal(t, cap(d.buf), 8)
-	d.PushBack(9)
-	testutil.EqVal(t, d.head, 0)
-	testutil.EqVal(t, cap(d.buf), 16)
-	eqDeque(t, d, []int{1, 2, 3, 4, 5, 6, 7, 8, 9})
-}
-
-func TestPushFront(t *testing.T) {
-	d := New[int]()
-	d.PushFront(1)
-	d.PushFront(2)
-	d.PushFront(3)
-	eqDeque(t, d, []int{3, 2, 1})
-	testutil.EqVal(t, cap(d.buf), 8)
-}
-
-func TestPushFrontAndBack(t *testing.T) {
-	d := New[int]()
-	d.PushBack(2)
-	d.PushFront(1)
-	d.PushBack(3)
-	d.PushFront(0)
-	eqDeque(t, d, []int{0, 1, 2, 3})
-}
-
-func TestPopFront(t *testing.T) {
-	cases := []struct {
+func TestPop(t *testing.T) {
+	type caseT struct {
 		name    string
 		start   []int
 		wantVal int
 		wantOk  bool
 		want    []int
-	}{
+	}
+	front := []caseT{
 		{"three", []int{1, 2, 3}, 1, true, []int{2, 3}},
 		{"one", []int{1}, 1, true, []int{}},
 		{"empty", nil, 0, false, []int{}},
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	back := []caseT{
+		{"three", []int{1, 2, 3}, 3, true, []int{1, 2}},
+		{"one", []int{1}, 1, true, []int{}},
+		{"empty", nil, 0, false, []int{}},
+	}
+	for _, tc := range front {
+		t.Run("front/"+tc.name, func(t *testing.T) {
 			d := Of(tc.start...)
 			val, ok := d.PopFront()
 			testutil.EqVal(t, ok, tc.wantOk)
@@ -193,22 +181,8 @@ func TestPopFront(t *testing.T) {
 			eqDeque(t, d, tc.want)
 		})
 	}
-}
-
-func TestPopBack(t *testing.T) {
-	cases := []struct {
-		name    string
-		start   []int
-		wantVal int
-		wantOk  bool
-		want    []int
-	}{
-		{"three", []int{1, 2, 3}, 3, true, []int{1, 2}},
-		{"one", []int{1}, 1, true, []int{}},
-		{"empty", nil, 0, false, []int{}},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range back {
+		t.Run("back/"+tc.name, func(t *testing.T) {
 			d := Of(tc.start...)
 			val, ok := d.PopBack()
 			testutil.EqVal(t, ok, tc.wantOk)
@@ -218,77 +192,72 @@ func TestPopBack(t *testing.T) {
 	}
 }
 
-func TestPopFrontOrder(t *testing.T) {
-	d := Of(1, 2, 3)
-	var got []int
-	for {
-		v, ok := d.PopFront()
-		if !ok {
-			break
+func TestDrain(t *testing.T) {
+	t.Run("front", func(t *testing.T) {
+		d := Of(1, 2, 3)
+		var got []int
+		for {
+			v, ok := d.PopFront()
+			if !ok {
+				break
+			}
+			got = append(got, v)
 		}
-		got = append(got, v)
-	}
-	testutil.Eq(t, got, []int{1, 2, 3})
-	testutil.EqVal(t, d.head, 0)
-}
-
-func TestPopBackOrder(t *testing.T) {
-	d := Of(1, 2, 3)
-	var got []int
-	for {
-		v, ok := d.PopBack()
-		if !ok {
-			break
+		testutil.Eq(t, got, []int{1, 2, 3})
+		testutil.EqVal(t, d.head, 0)
+	})
+	t.Run("back", func(t *testing.T) {
+		d := Of(1, 2, 3)
+		var got []int
+		for {
+			v, ok := d.PopBack()
+			if !ok {
+				break
+			}
+			got = append(got, v)
 		}
-		got = append(got, v)
-	}
-	testutil.Eq(t, got, []int{3, 2, 1})
-	testutil.EqVal(t, d.head, 0)
+		testutil.Eq(t, got, []int{3, 2, 1})
+		testutil.EqVal(t, d.head, 0)
+	})
 }
 
-func TestAfterPopFront(t *testing.T) {
-	d := Of(1, 2, 3)
-	d.PopFront()
-	testutil.EqVal(t, d.Len(), 2)
-	eqDeque(t, d, []int{2, 3})
-	testutil.EqVal(t, d.String(), "[2, 3]")
-	var vals []int
-	for v := range d.All() {
-		vals = append(vals, v)
-	}
-	testutil.Eq(t, vals, []int{2, 3})
+func TestReuseAfterPop(t *testing.T) {
+	t.Run("pop front then push back", func(t *testing.T) {
+		d := Of(1, 2, 3)
+		d.PopFront()
+		d.PopFront()
+		d.PushBack(4)
+		eqDeque(t, d, []int{3, 4})
+	})
+	t.Run("pop back then push front", func(t *testing.T) {
+		d := wrapFull(t)
+		val, ok := d.PopBack()
+		testutil.EqVal(t, ok, true)
+		testutil.EqVal(t, val, 10)
+		d.PushFront(2)
+		eqDeque(t, d, []int{2, 3, 4, 5, 6, 7, 8, 9})
+	})
 }
 
-func TestPopFrontThenPushBack(t *testing.T) {
-	d := Of(1, 2, 3)
-	d.PopFront()
-	d.PopFront()
-	d.PushBack(4)
-	eqDeque(t, d, []int{3, 4})
-}
-
-func TestPopBackThenPushFront(t *testing.T) {
-	d := wrapFull(t)
-	val, ok := d.PopBack()
-	testutil.EqVal(t, ok, true)
-	testutil.EqVal(t, val, 10)
-	d.PushFront(2)
-	eqDeque(t, d, []int{2, 3, 4, 5, 6, 7, 8, 9})
-}
-
-func TestPeekFront(t *testing.T) {
-	cases := []struct {
+func TestPeek(t *testing.T) {
+	type caseT struct {
 		name    string
 		start   []int
 		wantVal int
 		wantOk  bool
-	}{
+	}
+	front := []caseT{
 		{"three", []int{1, 2, 3}, 1, true},
 		{"one", []int{1}, 1, true},
 		{"empty", nil, 0, false},
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	back := []caseT{
+		{"three", []int{1, 2, 3}, 3, true},
+		{"one", []int{1}, 1, true},
+		{"empty", nil, 0, false},
+	}
+	for _, tc := range front {
+		t.Run("front/"+tc.name, func(t *testing.T) {
 			d := Of(tc.start...)
 			val, ok := d.PeekFront()
 			testutil.EqVal(t, ok, tc.wantOk)
@@ -296,21 +265,8 @@ func TestPeekFront(t *testing.T) {
 			testutil.EqVal(t, d.Len(), len(tc.start))
 		})
 	}
-}
-
-func TestPeekBack(t *testing.T) {
-	cases := []struct {
-		name    string
-		start   []int
-		wantVal int
-		wantOk  bool
-	}{
-		{"three", []int{1, 2, 3}, 3, true},
-		{"one", []int{1}, 1, true},
-		{"empty", nil, 0, false},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range back {
+		t.Run("back/"+tc.name, func(t *testing.T) {
 			d := Of(tc.start...)
 			val, ok := d.PeekBack()
 			testutil.EqVal(t, ok, tc.wantOk)
@@ -321,28 +277,29 @@ func TestPeekBack(t *testing.T) {
 }
 
 func TestClear(t *testing.T) {
-	d := Of(1, 2, 3, 4, 5)
-	capBefore := cap(d.buf)
-	d.Clear()
-	testutil.EqVal(t, d.Len(), 0)
-	testutil.EqVal(t, d.head, 0)
-	if cap(d.buf) != capBefore {
-		t.Fatalf("Clear should keep capacity: got %d, want %d", cap(d.buf), capBefore)
-	}
-	d.PushBack(9)
-	eqDeque(t, d, []int{9})
-}
-
-func TestClearResetsHead(t *testing.T) {
-	d := Of(1, 2, 3)
-	d.PopFront()
-	d.PopFront()
-	d.Clear()
-	testutil.EqVal(t, d.head, 0)
-	d.PushBack(9)
-	front, ok := d.PeekFront()
-	testutil.EqVal(t, ok, true)
-	testutil.EqVal(t, front, 9)
+	t.Run("keeps capacity", func(t *testing.T) {
+		d := Of(1, 2, 3, 4, 5)
+		capBefore := cap(d.buf)
+		d.Clear()
+		testutil.EqVal(t, d.Len(), 0)
+		testutil.EqVal(t, d.head, 0)
+		if cap(d.buf) != capBefore {
+			t.Fatalf("Clear should keep capacity: got %d, want %d", cap(d.buf), capBefore)
+		}
+		d.PushBack(9)
+		eqDeque(t, d, []int{9})
+	})
+	t.Run("resets head", func(t *testing.T) {
+		d := Of(1, 2, 3)
+		d.PopFront()
+		d.PopFront()
+		d.Clear()
+		testutil.EqVal(t, d.head, 0)
+		d.PushBack(9)
+		front, ok := d.PeekFront()
+		testutil.EqVal(t, ok, true)
+		testutil.EqVal(t, front, 9)
+	})
 }
 
 func TestAll(t *testing.T) {
@@ -365,14 +322,6 @@ func TestAll(t *testing.T) {
 		for range New[int]().All() {
 			t.Fatal("empty deque should not yield")
 		}
-	})
-	t.Run("wrapped", func(t *testing.T) {
-		d := wrapFull(t)
-		var vals []int
-		for v := range d.All() {
-			vals = append(vals, v)
-		}
-		testutil.Eq(t, vals, []int{3, 4, 5, 6, 7, 8, 9, 10})
 	})
 }
 
@@ -406,11 +355,6 @@ func TestToSliceEmpty(t *testing.T) {
 			testutil.NonNilEmpty(t, tc.got)
 		})
 	}
-}
-
-func TestToSliceWrapped(t *testing.T) {
-	d := wrapFull(t)
-	testutil.Eq(t, d.ToSlice(), []int{3, 4, 5, 6, 7, 8, 9, 10})
 }
 
 func TestString(t *testing.T) {
@@ -450,46 +394,65 @@ func TestNilReceiverPanics(t *testing.T) {
 	}
 }
 
-func TestWrapAround(t *testing.T) {
+func TestWrap(t *testing.T) {
 	d := wrapFull(t)
 	testutil.EqVal(t, d.head != 0, true)
 	testutil.EqVal(t, d.count, 8)
 	testutil.EqVal(t, cap(d.buf), 8)
 	eqDeque(t, d, []int{3, 4, 5, 6, 7, 8, 9, 10})
+
+	t.Run("peek and pop", func(t *testing.T) {
+		d := wrapFull(t)
+		front, ok := d.PeekFront()
+		testutil.EqVal(t, ok, true)
+		testutil.EqVal(t, front, 3)
+		back, ok := d.PeekBack()
+		testutil.EqVal(t, ok, true)
+		testutil.EqVal(t, back, 10)
+
+		val, ok := d.PopFront()
+		testutil.EqVal(t, ok, true)
+		testutil.EqVal(t, val, 3)
+		val, ok = d.PopBack()
+		testutil.EqVal(t, ok, true)
+		testutil.EqVal(t, val, 10)
+		eqDeque(t, d, []int{4, 5, 6, 7, 8, 9})
+	})
+	t.Run("All", func(t *testing.T) {
+		var vals []int
+		for v := range wrapFull(t).All() {
+			vals = append(vals, v)
+		}
+		testutil.Eq(t, vals, []int{3, 4, 5, 6, 7, 8, 9, 10})
+	})
+	t.Run("ToSlice", func(t *testing.T) {
+		testutil.Eq(t, wrapFull(t).ToSlice(), []int{3, 4, 5, 6, 7, 8, 9, 10})
+	})
 }
 
-func TestWrappedPeekAndPop(t *testing.T) {
-	d := wrapFull(t)
-	front, ok := d.PeekFront()
-	testutil.EqVal(t, ok, true)
-	testutil.EqVal(t, front, 3)
-	back, ok := d.PeekBack()
-	testutil.EqVal(t, ok, true)
-	testutil.EqVal(t, back, 10)
-
-	val, ok := d.PopFront()
-	testutil.EqVal(t, ok, true)
-	testutil.EqVal(t, val, 3)
-	val, ok = d.PopBack()
-	testutil.EqVal(t, ok, true)
-	testutil.EqVal(t, val, 10)
-	eqDeque(t, d, []int{4, 5, 6, 7, 8, 9})
-}
-
-func TestGrowUnwraps(t *testing.T) {
-	d := wrapFull(t)
-	d.PushBack(11)
-	testutil.EqVal(t, d.head, 0)
-	testutil.EqVal(t, cap(d.buf), 16)
-	eqDeque(t, d, []int{3, 4, 5, 6, 7, 8, 9, 10, 11})
-}
-
-func TestGrowFromPushFront(t *testing.T) {
-	d := wrapFull(t)
-	d.PushFront(2)
-	testutil.EqVal(t, d.head, 15)
-	testutil.EqVal(t, cap(d.buf), 16)
-	eqDeque(t, d, []int{2, 3, 4, 5, 6, 7, 8, 9, 10})
+func TestGrow(t *testing.T) {
+	t.Run("from PushBack", func(t *testing.T) {
+		d := Of(1, 2, 3, 4, 5, 6, 7, 8)
+		testutil.EqVal(t, cap(d.buf), 8)
+		d.PushBack(9)
+		testutil.EqVal(t, d.head, 0)
+		testutil.EqVal(t, cap(d.buf), 16)
+		eqDeque(t, d, []int{1, 2, 3, 4, 5, 6, 7, 8, 9})
+	})
+	t.Run("unwraps", func(t *testing.T) {
+		d := wrapFull(t)
+		d.PushBack(11)
+		testutil.EqVal(t, d.head, 0)
+		testutil.EqVal(t, cap(d.buf), 16)
+		eqDeque(t, d, []int{3, 4, 5, 6, 7, 8, 9, 10, 11})
+	})
+	t.Run("from PushFront", func(t *testing.T) {
+		d := wrapFull(t)
+		d.PushFront(2)
+		testutil.EqVal(t, d.head, 15)
+		testutil.EqVal(t, cap(d.buf), 16)
+		eqDeque(t, d, []int{2, 3, 4, 5, 6, 7, 8, 9, 10})
+	})
 }
 
 func TestEmptyResetsHead(t *testing.T) {
@@ -504,20 +467,21 @@ func TestEmptyResetsHead(t *testing.T) {
 	eqDeque(t, d, []int{9})
 }
 
-func TestPopFrontZeros(t *testing.T) {
-	a, b := 1, 2
-	d := Of(&a, &b)
-	d.PopFront()
-	testutil.EqVal(t, d.buf[0], (*int)(nil))
-	eqDeque(t, d, []*int{&b})
-}
-
-func TestPopBackZeros(t *testing.T) {
-	a, b := 1, 2
-	d := Of(&a, &b)
-	d.PopBack()
-	testutil.EqVal(t, d.buf[1], (*int)(nil))
-	eqDeque(t, d, []*int{&a})
+func TestPopZeros(t *testing.T) {
+	t.Run("front", func(t *testing.T) {
+		a, b := 1, 2
+		d := Of(&a, &b)
+		d.PopFront()
+		testutil.EqVal(t, d.buf[0], (*int)(nil))
+		eqDeque(t, d, []*int{&b})
+	})
+	t.Run("back", func(t *testing.T) {
+		a, b := 1, 2
+		d := Of(&a, &b)
+		d.PopBack()
+		testutil.EqVal(t, d.buf[1], (*int)(nil))
+		eqDeque(t, d, []*int{&a})
+	})
 }
 
 func TestClearZeros(t *testing.T) {

@@ -25,13 +25,13 @@ func New[T any]() *Deque[T] {
 // Empty (no args) is New(). Otherwise one allocation: capacity next power of two
 // ≥ max(len(vals), 8), copy into buf[0:n], head = 0. Do not grow in a loop.
 func Of[T any](vals ...T) *Deque[T] {
-	count := len(vals)
-	if count == 0 {
+	n := len(vals)
+	if n == 0 {
 		return New[T]()
 	}
-	buf := makeBufWithCap[T](count)
+	buf := makeBufWithCap[T](n)
 	copy(buf, vals)
-	return &Deque[T]{buf: buf, head: 0, count: count}
+	return &Deque[T]{buf: buf, head: 0, count: n}
 }
 
 // Deque from a slice. Copies s; first element is the front.
@@ -52,8 +52,7 @@ func (d *Deque[T]) IsEmpty() bool {
 
 // Add val at the front. A nil receiver panics — use New or Of.
 func (d *Deque[T]) PushFront(val T) {
-	count := len(d.buf)
-	if count == 0 || count == d.Len() {
+	if n := len(d.buf); n == 0 || n == d.Len() {
 		d.grow()
 	}
 
@@ -64,8 +63,7 @@ func (d *Deque[T]) PushFront(val T) {
 
 // Add val at the back. A nil receiver panics — use New or Of.
 func (d *Deque[T]) PushBack(val T) {
-	count := len(d.buf)
-	if count == 0 || count == d.Len() {
+	if n := len(d.buf); n == 0 || n == d.Len() {
 		d.grow()
 	}
 
