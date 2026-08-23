@@ -8,17 +8,17 @@ import (
 	"strings"
 )
 
-type List[T any] struct {
+type List[T comparable] struct {
 	items []T
 }
 
 // Empty list. Zero-capacity backing slice; first Add allocates.
-func New[T any]() *List[T] {
+func New[T comparable]() *List[T] {
 	return &List[T]{}
 }
 
 // List from the given values, in order. Of[T]() with no args is empty.
-func Of[T any](vals ...T) *List[T] {
+func Of[T comparable](vals ...T) *List[T] {
 	if len(vals) == 0 {
 		return New[T]()
 	}
@@ -26,7 +26,7 @@ func Of[T any](vals ...T) *List[T] {
 }
 
 // List from a slice. Copy `s` so later mutations of the original slice do not affect the list. `FromSlice(nil)` is empty.
-func FromSlice[T any](s []T) *List[T] {
+func FromSlice[T comparable](s []T) *List[T] {
 	return Of(s...)
 }
 
@@ -93,6 +93,27 @@ func (l *List[T]) Reverse() {
 	slices.Reverse(l.items)
 }
 
+// Remove the first element equal to `val`. Returns whether it was found. Missing: `false`, list unchanged. A nil receiver panics — use `New` or `Of`.
+func (l *List[T]) Remove(val T) bool {
+	i := slices.Index(l.items, val)
+	if i == -1 {
+		return false
+	}
+
+	l.items = slices.Delete(l.items, i, i+1)
+	return true
+}
+
+// Index of the first element equal to `val`, or `-1`. A nil receiver panics — use `New` or `Of`.
+func (l *List[T]) Index(val T) int {
+	return slices.Index(l.items, val)
+}
+
+// Whether `val` is in the list (`==`). A nil receiver panics — use `New` or `Of`.
+func (l *List[T]) Contains(val T) bool {
+	return slices.Contains(l.items, val)
+}
+
 // Copy of the current elements. Caller can mutate the result without affecting the list.
 func (l *List[T]) ToSlice() []T {
 	if l.Len() == 0 {
@@ -115,40 +136,7 @@ func (l *List[T]) String() string {
 	return "[" + strings.Join(vals, ", ") + "]"
 }
 
-// ---- Package level utils ----//
-// Remove the first element equal to `val`. Returns whether it was found. Missing: `false`, list unchanged. A nil `l` is treated as empty.
-func Remove[T comparable](l *List[T], val T) bool {
-	l = coalesce(l)
-	i := slices.Index(l.items, val)
-	if i == -1 {
-		return false
-	}
-
-	l.items = slices.Delete(l.items, i, i+1)
-	return true
-}
-
-// Index of the first element equal to `val`, or `-1`. A nil `l` is treated as empty.
-func Index[T comparable](l *List[T], val T) int {
-	l = coalesce(l)
-	return slices.Index(l.items, val)
-}
-
-// Whether `val` is in the list (`==`). A nil `l` is treated as empty.
-func Contains[T comparable](l *List[T], val T) bool {
-	l = coalesce(l)
-	return slices.Contains(l.items, val)
-}
-
-// Sort all elements. A nil `l` is treated as empty.
+// Sort all elements. Stays package-level because T must be cmp.Ordered, stricter than List's comparable. A nil `l` panics — use `New` or `Of`.
 func Sort[T cmp.Ordered](l *List[T]) {
-	l = coalesce(l)
 	slices.Sort(l.items)
-}
-
-func coalesce[T any](l *List[T]) *List[T] {
-	if l != nil {
-		return l
-	}
-	return New[T]()
 }

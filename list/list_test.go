@@ -16,12 +16,12 @@ func TestTypes(t *testing.T) {
 		l.Add("c")
 		eqList(t, l, []string{"a", "b", "c"})
 		mustGet(t, l, 1, "b")
-		testutil.EqVal(t, Contains(l, "b"), true)
+		testutil.EqVal(t, l.Contains("b"), true)
 	})
 	t.Run("struct", func(t *testing.T) {
 		l := Of(testutil.Pair{A: 1, B: 2}, testutil.Pair{A: 3, B: 4})
 		eqList(t, l, []testutil.Pair{{A: 1, B: 2}, {A: 3, B: 4}})
-		testutil.EqVal(t, Index(l, testutil.Pair{A: 3, B: 4}), 1)
+		testutil.EqVal(t, l.Index(testutil.Pair{A: 3, B: 4}), 1)
 	})
 	t.Run("float64", func(t *testing.T) {
 		l := Of(3.5, 1.25)
@@ -273,7 +273,7 @@ func TestRemove(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			l := Of(tc.start...)
-			testutil.EqVal(t, Remove(l, tc.val), tc.ok)
+			testutil.EqVal(t, l.Remove(tc.val), tc.ok)
 			eqList(t, l, tc.want)
 		})
 	}
@@ -292,7 +292,7 @@ func TestIndex(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			testutil.EqVal(t, Index(tc.l, tc.val), tc.want)
+			testutil.EqVal(t, tc.l.Index(tc.val), tc.want)
 		})
 	}
 }
@@ -310,7 +310,7 @@ func TestContains(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			testutil.EqVal(t, Contains(tc.l, tc.val), tc.want)
+			testutil.EqVal(t, tc.l.Contains(tc.val), tc.want)
 		})
 	}
 }
@@ -371,13 +371,6 @@ func TestString(t *testing.T) {
 	}
 }
 
-func TestNilListParam(t *testing.T) {
-	testutil.EqVal(t, Contains[int](nil, 1), false)
-	testutil.EqVal(t, Index[int](nil, 1), -1)
-	testutil.EqVal(t, Remove[int](nil, 1), false)
-	Sort[int](nil)
-}
-
 func TestNilReceiverPanics(t *testing.T) {
 	var l *List[int]
 	cases := []struct {
@@ -386,6 +379,10 @@ func TestNilReceiverPanics(t *testing.T) {
 	}{
 		{"Add", func() { l.Add(1) }},
 		{"Len", func() { l.Len() }},
+		{"Contains", func() { l.Contains(1) }},
+		{"Index", func() { l.Index(1) }},
+		{"Remove", func() { l.Remove(1) }},
+		{"Sort", func() { Sort(l) }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
