@@ -182,7 +182,6 @@ func (d *Deque[T]) String() string {
 	for v := range d.All() {
 		vals = append(vals, fmt.Sprintf("%v", v))
 	}
-
 	return "[" + strings.Join(vals, ", ") + "]"
 }
 

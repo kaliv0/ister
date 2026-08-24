@@ -55,14 +55,16 @@ func (s *Stack[T]) Peek() (T, bool) {
 }
 
 func (s *Stack[T]) handleLast(remove bool) (T, bool) {
+	var zero T
 	if s.IsEmpty() {
-		var zero T
 		return zero, false
 	}
 
-	val := s.items[s.Len()-1]
+	n := s.Len() - 1
+	val := s.items[n]
 	if remove {
-		s.items = slices.Delete(s.items, s.Len()-1, s.Len())
+		s.items[n] = zero
+		s.items = s.items[:n]
 	}
 	return val, true
 }
@@ -98,7 +100,6 @@ func (s *Stack[T]) String() string {
 	for v := range s.All() {
 		vals = append(vals, fmt.Sprintf("%v", v))
 	}
-
 	// TODO: add type (e.g. "stack[1, 2, 3]") for all String funcs -> extract common util
 	return "[" + strings.Join(vals, ", ") + "]"
 }

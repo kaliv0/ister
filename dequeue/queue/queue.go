@@ -119,7 +119,6 @@ func (q *Queue[T]) String() string {
 	for _, v := range q.view() {
 		vals = append(vals, fmt.Sprintf("%v", v))
 	}
-
 	return "[" + strings.Join(vals, ", ") + "]"
 }
 
