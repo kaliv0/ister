@@ -3,26 +3,24 @@ package main
 import (
 	"fmt"
 
-	"github.com/kaliv0/ister/list"
+	"github.com/kaliv0/ister/heap"
 )
 
 func main() {
-	l := list.Of(1, 2, 3)
-	l.Add(4)
-	l.Reverse()
-	l.RemoveAt(1)
-
-	v, _ := l.Get(0)
-	fmt.Println(v)
-
-	for el := range l.All() {
-		fmt.Printf("%d ", el)
+	// Top-K elements
+	vals := []int{1, 8, 3, 9, 0, 40, 2, 15, 77}
+	less := func(a, b int) bool {
+		return a > b
 	}
-	fmt.Println()
+	h := heap.FromSlice(less, vals)
 
-	l.Set(0, 80)
-	fmt.Println(l)
+	k := 5
+	res := make([]int, 0, k)
 
-	l.Clear()
-	fmt.Print(l.Len())
+	for i := 0; i < k; i++ {
+		v, _ := h.Pop()
+		res = append(res, v)
+	}
+
+	fmt.Print(res)
 }
