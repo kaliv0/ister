@@ -94,7 +94,7 @@ func (pq *PriorityQueue[T]) Remove(val T) bool {
 	return true
 }
 
-// Drop all elements. Keep backing capacity so later Pushes can reuse it.
+// Drop all elements. Keep backing capacity and less so later Pushes can reuse the queue.
 func (pq *PriorityQueue[T]) Clear() {
 	clear(pq.h.items)
 	pq.h.items = pq.h.items[:0]

@@ -205,8 +205,13 @@ func TestClear(t *testing.T) {
 	if cap(pq.h.items) != capBefore {
 		t.Fatalf("Clear should keep capacity: got %d, want %d", cap(pq.h.items), capBefore)
 	}
+	// less must still work: second Push compares.
 	pq.Push(9)
-	eqElems(t, pq, []int{9})
+	pq.Push(3)
+	eqElems(t, pq, []int{3, 9})
+	got, ok := pq.Peek()
+	testutil.EqVal(t, ok, true)
+	testutil.EqVal(t, got, 3)
 }
 
 func TestAll(t *testing.T) {
