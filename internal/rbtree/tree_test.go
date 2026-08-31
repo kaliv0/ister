@@ -9,16 +9,14 @@ import (
 	"github.com/kaliv0/ister/internal/testutil"
 )
 
-func lessInt(a, b int) bool { return a < b }
-
 func TestNew(t *testing.T) {
-	tr := New[int, string](lessInt)
+	tr := New[int, string](testutil.LessInt)
 	testutil.EqVal(t, tr.Len(), 0)
 	checkRB(t, tr)
 }
 
 func TestPutGetContains(t *testing.T) {
-	tr := New[int, string](lessInt)
+	tr := New[int, string](testutil.LessInt)
 
 	old, had := tr.Put(10, "ten")
 	testutil.EqVal(t, had, false)
@@ -27,7 +25,7 @@ func TestPutGetContains(t *testing.T) {
 	mustGet(t, tr, 10, "ten")
 	testutil.EqVal(t, tr.Contains(10), true)
 	testutil.EqVal(t, tr.Contains(99), false)
-	testutil.EqVal(t, New[int, string](lessInt).Contains(1), false)
+	testutil.EqVal(t, New[int, string](testutil.LessInt).Contains(1), false)
 
 	old, had = tr.Put(10, "TEN")
 	testutil.EqVal(t, had, true)
@@ -37,7 +35,7 @@ func TestPutGetContains(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	tr := New[int, string](lessInt)
+	tr := New[int, string](testutil.LessInt)
 	for _, e := range []struct {
 		k int
 		v string
@@ -70,7 +68,7 @@ func TestGet(t *testing.T) {
 	}
 
 	t.Run("empty", func(t *testing.T) {
-		v, ok := New[int, string](lessInt).Get(1)
+		v, ok := New[int, string](testutil.LessInt).Get(1)
 		testutil.EqVal(t, ok, false)
 		testutil.EqVal(t, v, "")
 	})
@@ -87,7 +85,7 @@ func TestPutOrder(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			tr := New[int, int](lessInt)
+			tr := New[int, int](testutil.LessInt)
 			for _, k := range tc.keys {
 				tr.Put(k, k*10)
 			}
@@ -104,7 +102,7 @@ func TestPutOrder(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	tr := New[int, string](lessInt)
+	tr := New[int, string](testutil.LessInt)
 	tr.Put(10, "ten")
 	tr.Put(20, "twenty")
 
@@ -134,7 +132,7 @@ func TestDeleteShapes(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			tr := New[int, int](lessInt)
+			tr := New[int, int](testutil.LessInt)
 			ref := make(map[int]int)
 			for _, k := range tc.insert {
 				tr.Put(k, k*10)
@@ -155,7 +153,7 @@ func TestDeleteShapes(t *testing.T) {
 }
 
 func TestAscend(t *testing.T) {
-	tr := New[int, int](lessInt)
+	tr := New[int, int](testutil.LessInt)
 	for _, k := range []int{30, 10, 20, 50, 40} {
 		tr.Put(k, k*10)
 	}
@@ -181,14 +179,14 @@ func TestAscend(t *testing.T) {
 		testutil.Eq(t, got, []int{10, 20, 30})
 	})
 	t.Run("empty", func(t *testing.T) {
-		for range New[int, int](lessInt).Ascend() {
+		for range New[int, int](testutil.LessInt).Ascend() {
 			t.Fatal("empty Ascend should not yield")
 		}
 	})
 }
 
 func TestAscendRange(t *testing.T) {
-	tr := New[int, int](lessInt)
+	tr := New[int, int](testutil.LessInt)
 	for _, k := range []int{10, 20, 30, 40, 50} {
 		tr.Put(k, k)
 	}
@@ -212,7 +210,7 @@ func TestAscendRange(t *testing.T) {
 	}
 
 	t.Run("empty tree", func(t *testing.T) {
-		testutil.Eq(t, keysOfRange(New[int, int](lessInt), 1, 9), []int{})
+		testutil.Eq(t, keysOfRange(New[int, int](testutil.LessInt), 1, 9), []int{})
 	})
 	t.Run("early break", func(t *testing.T) {
 		var got []int
@@ -227,7 +225,7 @@ func TestAscendRange(t *testing.T) {
 }
 
 func TestNavigable(t *testing.T) {
-	tr := New[int, int](lessInt)
+	tr := New[int, int](testutil.LessInt)
 	for _, k := range []int{10, 20, 30, 40, 50} {
 		tr.Put(k, k*10)
 	}
@@ -267,7 +265,7 @@ func TestNavigable(t *testing.T) {
 		})
 	}
 
-	empty := New[int, int](lessInt)
+	empty := New[int, int](testutil.LessInt)
 	for _, tc := range []struct {
 		name string
 		fn   func() (int, int, bool)
@@ -289,7 +287,7 @@ func TestNavigable(t *testing.T) {
 }
 
 func TestClear(t *testing.T) {
-	tr := New[int, string](lessInt)
+	tr := New[int, string](testutil.LessInt)
 	tr.Put(1, "a")
 	tr.Put(2, "b")
 	tr.Clear()
@@ -382,7 +380,7 @@ func TestNilReceiverPanics(t *testing.T) {
 
 func TestPutDeleteShuffle(t *testing.T) {
 	keys := []int{5, 1, 9, 3, 7, 2, 8, 4, 6, 0}
-	tr := New[int, string](lessInt)
+	tr := New[int, string](testutil.LessInt)
 	ref := make(map[int]string)
 
 	for _, k := range keys {
@@ -404,7 +402,7 @@ func TestPutDeleteShuffle(t *testing.T) {
 
 func TestPutDeleteRandom(t *testing.T) {
 	rng := rand.New(rand.NewSource(1))
-	tr := New[int, int](lessInt)
+	tr := New[int, int](testutil.LessInt)
 	ref := make(map[int]int)
 
 	for range 200 {

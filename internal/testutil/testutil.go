@@ -40,6 +40,17 @@ func MustPanic(t *testing.T, fn func()) {
 // Pair is a comparable struct used to test non-primitive element types.
 type Pair struct{ A, B int }
 
+func LessInt(a, b int) bool { return a < b }
+
+func GreaterInt(a, b int) bool { return a > b }
+
+func LessPair(a, b Pair) bool {
+	if a.A != b.A {
+		return a.A < b.A
+	}
+	return a.B < b.B
+}
+
 // Ident is a fmt.Stringer int used to test String() formatting.
 type Ident int
 

@@ -7,19 +7,8 @@ import (
 	"github.com/kaliv0/ister/internal/testutil"
 )
 
-func lessInt(a, b int) bool { return a < b }
-
-func greaterInt(a, b int) bool { return a > b }
-
-func lessPair(a, b testutil.Pair) bool {
-	if a.A != b.A {
-		return a.A < b.A
-	}
-	return a.B < b.B
-}
-
 func TestNew(t *testing.T) {
-	pq := New(lessInt)
+	pq := New(testutil.LessInt)
 	testutil.EqVal(t, pq.Len(), 0)
 	testutil.EqVal(t, pq.IsEmpty(), true)
 }
@@ -38,7 +27,7 @@ func TestTypes(t *testing.T) {
 		eqPoll(t, pq, []string{"b", "c"})
 	})
 	t.Run("struct", func(t *testing.T) {
-		pq := New(lessPair)
+		pq := New(testutil.LessPair)
 		pq.Push(testutil.Pair{A: 2, B: 1})
 		pq.Push(testutil.Pair{A: 1, B: 9})
 		val, ok := pq.Pop()
@@ -49,19 +38,19 @@ func TestTypes(t *testing.T) {
 }
 
 func TestOf(t *testing.T) {
-	eqElems(t, Of(lessInt, 3, 1, 2), []int{1, 2, 3})
-	eqElems(t, Of(lessInt), []int{})
+	eqElems(t, Of(testutil.LessInt, 3, 1, 2), []int{1, 2, 3})
+	eqElems(t, Of(testutil.LessInt), []int{})
 }
 
 func TestIsEmpty(t *testing.T) {
-	testutil.EqVal(t, New(lessInt).IsEmpty(), true)
-	testutil.EqVal(t, Of(lessInt, 1).IsEmpty(), false)
+	testutil.EqVal(t, New(testutil.LessInt).IsEmpty(), true)
+	testutil.EqVal(t, Of(testutil.LessInt, 1).IsEmpty(), false)
 }
 
 func TestOfCopies(t *testing.T) {
 	src := make([]int, 3, 8)
 	copy(src, []int{1, 2, 3})
-	pq := Of(lessInt, src...)
+	pq := Of(testutil.LessInt, src...)
 	pq.Push(4)
 	testutil.EqVal(t, src[:cap(src)][3], 0)
 	eqElems(t, pq, []int{1, 2, 3, 4})
@@ -70,23 +59,23 @@ func TestOfCopies(t *testing.T) {
 func TestFromSlice(t *testing.T) {
 	t.Run("src mutation", func(t *testing.T) {
 		src := []int{3, 1, 2}
-		pq := FromSlice(lessInt, src)
+		pq := FromSlice(testutil.LessInt, src)
 		src[0] = 99
 		eqElems(t, pq, []int{1, 2, 3})
 	})
 	t.Run("nil", func(t *testing.T) {
-		pq := FromSlice(lessInt, []int(nil))
+		pq := FromSlice(testutil.LessInt, []int(nil))
 		testutil.EqVal(t, pq.Len(), 0)
 	})
 	t.Run("empty", func(t *testing.T) {
-		pq := FromSlice(lessInt, []int{})
+		pq := FromSlice(testutil.LessInt, []int{})
 		testutil.EqVal(t, pq.Len(), 0)
 		testutil.NonNilEmpty(t, pq.ToSlice())
 	})
 }
 
 func TestZeroValue(t *testing.T) {
-	pq := &PriorityQueue[int]{h: pqHeap[int]{less: lessInt}}
+	pq := &PriorityQueue[int]{h: pqHeap[int]{less: testutil.LessInt}}
 	testutil.EqVal(t, pq.Len(), 0)
 	testutil.EqVal(t, pq.IsEmpty(), true)
 	pq.Push(1)
@@ -94,12 +83,12 @@ func TestZeroValue(t *testing.T) {
 }
 
 func TestLen(t *testing.T) {
-	testutil.EqVal(t, New(lessInt).Len(), 0)
-	testutil.EqVal(t, Of(lessInt, 1, 2, 3).Len(), 3)
+	testutil.EqVal(t, New(testutil.LessInt).Len(), 0)
+	testutil.EqVal(t, Of(testutil.LessInt, 1, 2, 3).Len(), 3)
 }
 
 func TestPush(t *testing.T) {
-	pq := New(lessInt)
+	pq := New(testutil.LessInt)
 	pq.Push(3)
 	pq.Push(1)
 	pq.Push(2)
@@ -120,7 +109,7 @@ func TestPop(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			pq := Of(lessInt, tc.start...)
+			pq := Of(testutil.LessInt, tc.start...)
 			val, ok := pq.Pop()
 			testutil.EqVal(t, ok, tc.wantOk)
 			testutil.EqVal(t, val, tc.wantVal)
@@ -131,18 +120,18 @@ func TestPop(t *testing.T) {
 
 func TestPopOrder(t *testing.T) {
 	t.Run("min", func(t *testing.T) {
-		eqPoll(t, Of(lessInt, 5, 1, 4, 2, 3), []int{1, 2, 3, 4, 5})
+		eqPoll(t, Of(testutil.LessInt, 5, 1, 4, 2, 3), []int{1, 2, 3, 4, 5})
 	})
 	t.Run("max", func(t *testing.T) {
-		eqPoll(t, Of(greaterInt, 5, 1, 4, 2, 3), []int{5, 4, 3, 2, 1})
+		eqPoll(t, Of(testutil.GreaterInt, 5, 1, 4, 2, 3), []int{5, 4, 3, 2, 1})
 	})
 	t.Run("duplicates", func(t *testing.T) {
-		eqPoll(t, Of(lessInt, 2, 1, 2), []int{1, 2, 2})
+		eqPoll(t, Of(testutil.LessInt, 2, 1, 2), []int{1, 2, 2})
 	})
 }
 
 func TestPushAfterPop(t *testing.T) {
-	pq := Of(lessInt, 3, 1, 2)
+	pq := Of(testutil.LessInt, 3, 1, 2)
 	val, ok := pq.Pop()
 	testutil.EqVal(t, ok, true)
 	testutil.EqVal(t, val, 1)
@@ -163,7 +152,7 @@ func TestPeek(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			pq := Of(lessInt, tc.start...)
+			pq := Of(testutil.LessInt, tc.start...)
 			val, ok := pq.Peek()
 			testutil.EqVal(t, ok, tc.wantOk)
 			testutil.EqVal(t, val, tc.wantVal)
@@ -189,7 +178,7 @@ func TestRemove(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			pq := Of(lessInt, tc.start...)
+			pq := Of(testutil.LessInt, tc.start...)
 			testutil.EqVal(t, pq.Remove(tc.val), tc.ok)
 			eqPoll(t, pq, tc.want)
 		})
@@ -197,7 +186,7 @@ func TestRemove(t *testing.T) {
 }
 
 func TestClear(t *testing.T) {
-	pq := Of(lessInt, 1, 2, 3, 4, 5)
+	pq := Of(testutil.LessInt, 1, 2, 3, 4, 5)
 	capBefore := cap(pq.h.items)
 	pq.Clear()
 	testutil.EqVal(t, pq.Len(), 0)
@@ -216,7 +205,7 @@ func TestClear(t *testing.T) {
 
 func TestAll(t *testing.T) {
 	t.Run("values", func(t *testing.T) {
-		pq := Of(lessInt, 3, 1, 2)
+		pq := Of(testutil.LessInt, 3, 1, 2)
 		var vals []int
 		for v := range pq.All() {
 			vals = append(vals, v)
@@ -227,21 +216,21 @@ func TestAll(t *testing.T) {
 	})
 	t.Run("early break", func(t *testing.T) {
 		n := 0
-		for range Of(lessInt, 3, 1, 2).All() {
+		for range Of(testutil.LessInt, 3, 1, 2).All() {
 			n++
 			break
 		}
 		testutil.EqVal(t, n, 1)
 	})
 	t.Run("empty", func(t *testing.T) {
-		for range New(lessInt).All() {
+		for range New(testutil.LessInt).All() {
 			t.Fatal("empty queue should not yield")
 		}
 	})
 }
 
 func TestToSlice(t *testing.T) {
-	pq := Of(lessInt, 3, 1, 2)
+	pq := Of(testutil.LessInt, 3, 1, 2)
 	a := pq.ToSlice()
 	slices.Sort(a)
 	testutil.Eq(t, a, []int{1, 2, 3})
@@ -253,18 +242,18 @@ func TestToSlice(t *testing.T) {
 }
 
 func TestToSliceEmpty(t *testing.T) {
-	cleared := Of(lessInt, 1, 2)
+	cleared := Of(testutil.LessInt, 1, 2)
 	cleared.Clear()
-	drained := Of(lessInt, 1, 2)
+	drained := Of(testutil.LessInt, 1, 2)
 	drained.Pop()
 	drained.Pop()
 	cases := []struct {
 		name string
 		got  []int
 	}{
-		{"New", New(lessInt).ToSlice()},
-		{"Of", Of(lessInt).ToSlice()},
-		{"FromSlice nil", FromSlice(lessInt, []int(nil)).ToSlice()},
+		{"New", New(testutil.LessInt).ToSlice()},
+		{"Of", Of(testutil.LessInt).ToSlice()},
+		{"FromSlice nil", FromSlice(testutil.LessInt, []int(nil)).ToSlice()},
 		{"after Clear", cleared.ToSlice()},
 		{"after drain", drained.ToSlice()},
 	}
@@ -281,8 +270,8 @@ func TestString(t *testing.T) {
 		got  string
 		want string
 	}{
-		{"empty", New(lessInt).String(), "[]"},
-		{"single", Of(lessInt, 1).String(), "[1]"},
+		{"empty", New(testutil.LessInt).String(), "[]"},
+		{"single", Of(testutil.LessInt, 1).String(), "[1]"},
 		{"stringer", Of(func(a, b testutil.Ident) bool { return a < b }, testutil.Ident(1)).String(), "[id=1]"},
 	}
 	for _, tc := range cases {

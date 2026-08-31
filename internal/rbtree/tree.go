@@ -230,11 +230,6 @@ func (t *Tree[K, V]) Delete(k K) (old V, ok bool) {
 	return old, true
 }
 
-// Unlink n from the tree and restore red-black invariants.
-//
-// Two-child case: copy the successor's key/val into n, then unlink the
-// successor instead (successor has no left child). That avoids moving
-// n's left/right pointers onto another node.
 func (t *Tree[K, V]) deleteNode(n *node[K, V]) {
 	// If n has two children, delete its successor instead of n.
 	// Successor is the minimum of n.right — always has nil left.
@@ -245,20 +240,20 @@ func (t *Tree[K, V]) deleteNode(n *node[K, V]) {
 		n = succ
 	}
 
-	// Now n has at most one child. child may be nil if n is a leaf.
+	// n has at most one child -> if n is a leaf child may be nil
 	var child *node[K, V]
 	if n.left != nil {
 		child = n.left
 	} else {
 		child = n.right
 	}
-	// Parent of the hole after transplant. Needed when child is nil (no sentinel).
+	// parent of the hole after transplant, needed when child is nil (no sentinel)
 	childParent := n.parent
 	wasRed := n.red
 
 	t.transplant(n, child)
 
-	// Deleting a red node cannot break black-height. Black deletion may.
+	// deleting a red node cannot break black-height, black deletion may
 	if !wasRed {
 		t.deleteFixup(child, childParent)
 	}
@@ -281,7 +276,6 @@ func (t *Tree[K, V]) maximum(n *node[K, V]) *node[K, V] {
 }
 
 // Replace subtree rooted at old with subtree rooted at repl.
-// repl may be nil (old is spliced out with no replacement).
 func (t *Tree[K, V]) transplant(old, repl *node[K, V]) {
 	if old.parent == nil {
 		t.root = repl
@@ -323,6 +317,7 @@ func (t *Tree[K, V]) deleteFixupLeft(n, parent *node[K, V]) (*node[K, V], *node[
 	}
 	if sibling == nil {
 		// No sibling: move double-black up to parent.
+		// NB:  in a valid RB tree after a black delete this should not happen
 		return parent, parent.parent
 	}
 	if !isRed(sibling.left) && !isRed(sibling.right) {

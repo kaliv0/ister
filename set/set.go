@@ -90,6 +90,8 @@ func (s *Set[T]) String() string {
 	return "{" + strings.Join(vals, ", ") + "}"
 }
 
+//---- Algebra ----//
+
 // Elements in `s` or `other` (or both). A nil `other` is treated as empty.
 func (s *Set[T]) Union(other *Set[T]) *Set[T] {
 	other = coalesce(other)

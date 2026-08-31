@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+// PriorityQueue is a binary heap ordered by less.
+// Prefer New or Of; the zero value has a nil less and is not useful for ordered ops.
 type PriorityQueue[T comparable] struct {
 	h pqHeap[T]
 }
