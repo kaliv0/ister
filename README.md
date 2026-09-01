@@ -3,5 +3,3 @@
 </p>
 
 # ister
-
-Collections and lazy streams for Go

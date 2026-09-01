@@ -42,6 +42,7 @@ func (s *OrderedSet[T]) Len() int {
 // Add one or more elements. Duplicates (by less) are ignored.
 // A nil receiver panics — use New or Of.
 func (s *OrderedSet[T]) Add(vals ...T) {
+	// TODO: for bigger collections -> extend tree with bulkAdd (theoretically build tree from ground-up if vals are sorted)
 	for _, v := range vals {
 		s.tree.Put(v, struct{}{})
 	}
